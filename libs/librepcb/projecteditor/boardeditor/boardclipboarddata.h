@@ -27,13 +27,15 @@
 #include <librepcb/common/fileio/serializableobject.h>
 #include <librepcb/common/fileio/serializableobjectlist.h>
 #include <librepcb/common/geometry/hole.h>
+#include <librepcb/common/geometry/netpoint.h>
 #include <librepcb/common/geometry/polygon.h>
 #include <librepcb/common/geometry/stroketext.h>
+#include <librepcb/common/geometry/trace.h>
+#include <librepcb/common/geometry/via.h>
 #include <librepcb/common/signalslot.h>
 #include <librepcb/common/units/all_length_units.h>
 #include <librepcb/common/uuid.h>
 #include <librepcb/project/boards/items/bi_plane.h>
-#include <librepcb/project/boards/items/bi_via.h>
 #include <librepcb/project/circuit/circuit.h>
 
 #include <QtCore>
@@ -45,6 +47,10 @@
  *  Namespace / Forward Declarations
  ******************************************************************************/
 namespace librepcb {
+
+class TransactionalFileSystem;
+class TransactionalDirectory;
+
 namespace project {
 namespace editor {
 
@@ -58,142 +64,70 @@ namespace editor {
 class BoardClipboardData final : public SerializableObject {
 public:
   // Types
-  struct Via : public SerializableObject {
-    static constexpr const char* tagname = "via";
+  struct Device : public SerializableObject {
+    static constexpr const char* tagname = "device";
 
-    Uuid           uuid;
+    Uuid           componentUuid;
+    Uuid           libDeviceUuid;
+    Uuid           libFootprintUuid;
     Point          position;
-    BI_Via::Shape  shape;
-    PositiveLength size;
-    PositiveLength drillDiameter;
-    Signal<Via>    onEdited;  ///< Dummy event, not used
+    Angle          rotation;
+    bool           mirrored;
+    StrokeTextList strokeTexts;
+    Signal<Device> onEdited;  ///< Dummy event, not used
 
-    Via(const Uuid& uuid, const Point& position, BI_Via::Shape shape,
-        const PositiveLength& size, const PositiveLength& drillDiameter)
-      : uuid(uuid),
+    Device(const Uuid& componentUuid, const Uuid& libDeviceUuid,
+           const Uuid& libFootprintUuid, const Point& position,
+           const Angle& rotation, bool mirrored,
+           const StrokeTextList& strokeTexts)
+      : componentUuid(componentUuid),
+        libDeviceUuid(libDeviceUuid),
+        libFootprintUuid(libFootprintUuid),
         position(position),
-        shape(shape),
-        size(size),
-        drillDiameter(drillDiameter),
+        rotation(rotation),
+        mirrored(mirrored),
+        strokeTexts(strokeTexts),
         onEdited(*this) {}
 
-    explicit Via(const SExpression& node)
-      : uuid(node.getChildByIndex(0).getValue<Uuid>()),
+    explicit Device(const SExpression& node)
+      : componentUuid(node.getChildByIndex(0).getValue<Uuid>()),
+        libDeviceUuid(node.getValueByPath<Uuid>("lib_device")),
+        libFootprintUuid(node.getValueByPath<Uuid>("lib_footprint")),
         position(node.getChildByPath("position")),
-        shape(node.getValueByPath<BI_Via::Shape>("shape")),
-        size(node.getValueByPath<PositiveLength>("size")),
-        drillDiameter(node.getValueByPath<PositiveLength>("drill")),
+        rotation(node.getValueByPath<Angle>("rotation")),
+        mirrored(node.getValueByPath<bool>("mirror")),
+        strokeTexts(node),
         onEdited(*this) {}
 
     /// @copydoc ::librepcb::SerializableObject::serialize()
     void serialize(SExpression& root) const override {
-      root.appendChild(uuid);
+      root.appendChild(componentUuid);
+      root.appendChild("lib_device", libDeviceUuid, true);
+      root.appendChild("lib_footprint", libFootprintUuid, true);
       root.appendChild(position.serializeToDomElement("position"), true);
-      root.appendChild("size", size, false);
-      root.appendChild("drill", drillDiameter, false);
-      root.appendChild("shape", shape, false);
-    }
-  };
-
-  struct NetPoint : public SerializableObject {
-    static constexpr const char* tagname = "junction";
-
-    Uuid             uuid;
-    Point            position;
-    Signal<NetPoint> onEdited;  ///< Dummy event, not used
-
-    NetPoint(const Uuid& uuid, const Point& position)
-      : uuid(uuid), position(position), onEdited(*this) {}
-
-    explicit NetPoint(const SExpression& node)
-      : uuid(node.getChildByIndex(0).getValue<Uuid>()),
-        position(node.getChildByPath("position")),
-        onEdited(*this) {}
-
-    /// @copydoc ::librepcb::SerializableObject::serialize()
-    void serialize(SExpression& root) const override {
-      root.appendChild(uuid);
-      root.appendChild(position.serializeToDomElement("position"), true);
-    }
-  };
-
-  struct NetLine : public SerializableObject {
-    static constexpr const char* tagname = "trace";
-
-    Uuid               uuid;
-    tl::optional<Uuid> startJunction;
-    tl::optional<Uuid> startVia;
-    tl::optional<Uuid> endJunction;
-    tl::optional<Uuid> endVia;
-    QString            layer;
-    PositiveLength     width;
-    Signal<NetLine>    onEdited;  ///< Dummy event, not used
-
-    explicit NetLine(const Uuid& uuid, const QString& layer,
-                     const PositiveLength& width)
-      : uuid(uuid),
-        startJunction(),
-        startVia(),
-        endJunction(),
-        endVia(),
-        layer(layer),
-        width(width),
-        onEdited(*this) {}
-
-    explicit NetLine(const SExpression& node)
-      : uuid(node.getChildByIndex(0).getValue<Uuid>()),
-        layer(node.getValueByPath<QString>("layer", true)),
-        width(node.getValueByPath<PositiveLength>("width")),
-        onEdited(*this) {
-      if (node.tryGetChildByPath("from/via")) {
-        startVia = node.getValueByPath<Uuid>("from/via");
-      } else {
-        startJunction = node.getValueByPath<Uuid>("from/junction");
-      }
-      if (node.tryGetChildByPath("to/via")) {
-        endVia = node.getValueByPath<Uuid>("to/via");
-      } else {
-        endJunction = node.getValueByPath<Uuid>("to/junction");
-      }
-    }
-
-    /// @copydoc ::librepcb::SerializableObject::serialize()
-    void serialize(SExpression& root) const override {
-      root.appendChild(uuid);
-      root.appendChild("layer", SExpression::createToken(layer), false);
-      root.appendChild("width", width, false);
-      SExpression& from = root.appendList("from", true);
-      if (startVia) {
-        from.appendChild("via", *startVia, false);
-      } else {
-        from.appendChild("junction", *startJunction, false);
-      }
-      SExpression& to = root.appendList("to", true);
-      if (endVia) {
-        to.appendChild("via", *endVia, false);
-      } else {
-        to.appendChild("junction", *endJunction, false);
-      }
+      root.appendChild("rotation", rotation, false);
+      root.appendChild("mirror", mirrored, false);
+      strokeTexts.serialize(root);
     }
   };
 
   struct NetSegment : public SerializableObject {
     static constexpr const char* tagname = "netsegment";
 
-    CircuitIdentifier                          netName;
-    SerializableObjectList<Via, Via>           vias;
-    SerializableObjectList<NetPoint, NetPoint> points;
-    SerializableObjectList<NetLine, NetLine>   lines;
+    CircuitIdentifier  netName;
+    ViaList            vias;
+    NetPointList       points;
+    TraceList          traces;
     Signal<NetSegment> onEdited;  ///< Dummy event, not used
 
     explicit NetSegment(const CircuitIdentifier& netName)
-      : netName(netName), vias(), points(), lines(), onEdited(*this) {}
+      : netName(netName), vias(), points(), traces(), onEdited(*this) {}
 
     explicit NetSegment(const SExpression& node)
       : netName(node.getValueByPath<CircuitIdentifier>("net")),
         vias(node),
         points(node),
-        lines(node),
+        traces(node),
         onEdited(*this) {}
 
     /// @copydoc ::librepcb::SerializableObject::serialize()
@@ -201,7 +135,7 @@ public:
       root.appendChild("net", netName, true);
       vias.serialize(root);
       points.serialize(root);
-      lines.serialize(root);
+      traces.serialize(root);
     }
   };
 
@@ -269,8 +203,13 @@ public:
   ~BoardClipboardData() noexcept;
 
   // Getters
+  std::unique_ptr<TransactionalDirectory> getDirectory(
+      const QString& path = "") noexcept;
   const Uuid&  getBoardUuid() const noexcept { return mBoardUuid; }
   const Point& getCursorPos() const noexcept { return mCursorPos; }
+  SerializableObjectList<Device, Device>& getDevices() noexcept {
+    return mDevices;
+  }
   SerializableObjectList<NetSegment, NetSegment>& getNetSegments() noexcept {
     return mNetSegments;
   }
@@ -294,8 +233,10 @@ private:  // Methods
   static QString getMimeType() noexcept;
 
 private:  // Data
+  std::shared_ptr<TransactionalFileSystem>       mFileSystem;
   Uuid                                           mBoardUuid;
   Point                                          mCursorPos;
+  SerializableObjectList<Device, Device>         mDevices;
   SerializableObjectList<NetSegment, NetSegment> mNetSegments;
   SerializableObjectList<Plane, Plane>           mPlanes;
   PolygonList                                    mPolygons;

@@ -42,7 +42,7 @@ namespace editor {
  ******************************************************************************/
 
 BoardNetSegmentSplitter::BoardNetSegmentSplitter() noexcept
-  : mVias(), mNetLines() {
+  : mNetPoints(), mVias(), mTraces() {
 }
 
 BoardNetSegmentSplitter::~BoardNetSegmentSplitter() noexcept {
@@ -57,38 +57,37 @@ QList<BoardNetSegmentSplitter::Segment> BoardNetSegmentSplitter::split() const
   QList<Segment> segments;
 
   // Split netsegment by anchors and lines
-  QList<BI_NetLine*> netlines = mNetLines;
-  QList<BI_Via*>     vias     = mVias;
-  while (netlines.count() > 0) {
-    Segment                  segment;
-    QList<BI_NetLineAnchor*> processedAnchors;
-    findConnectedLinesAndPoints(netlines.first()->getStartPoint(),
-                                processedAnchors, segment.anchors,
-                                segment.netlines, vias, netlines);
-    segments.append(segment);
-  }
-  Q_ASSERT(netlines.isEmpty());
-
-  // Add remaining vias as separate segments
-  foreach (BI_Via* via, vias) {
-    Segment segment;
-    segment.anchors.append(via);
-    segments.append(segment);
-  }
+  // QList<BI_NetLine*> netlines = mNetLines;
+  // QList<BI_Via*>     vias     = mVias;
+  // while (netlines.count() > 0) {
+  //  Segment                  segment;
+  //  QList<BI_NetLineAnchor*> processedAnchors;
+  //  findConnectedLinesAndPoints(netlines.first()->getStartPoint(),
+  //                              processedAnchors, segment, vias, netlines);
+  //  segments.append(segment);
+  //}
+  // Q_ASSERT(netlines.isEmpty());
+  //
+  //// Add remaining vias as separate segments
+  // foreach (BI_Via* via, vias) {
+  //  Segment segment;
+  //  segment.anchors.append(via);
+  //  segments.append(segment);
+  //}
 
   return segments;
 }
 
-void BoardNetSegmentSplitter::findConnectedLinesAndPoints(
+/*void BoardNetSegmentSplitter::findConnectedLinesAndPoints(
     BI_NetLineAnchor& anchor, QList<BI_NetLineAnchor*>& processedAnchors,
-    QList<BI_NetLineAnchor*>& anchors, QList<BI_NetLine*>& netlines,
-    QList<BI_Via*>& availableVias, QList<BI_NetLine*>& availableNetLines) const
-    noexcept {
+    Segment& segment, QList<BI_Via*>& availableVias,
+    QList<BI_NetLine*>& availableNetLines) const noexcept {
   Q_ASSERT(!processedAnchors.contains(&anchor));
   processedAnchors.append(&anchor);
 
-  bool isRemovedVia = false;
-  if (BI_Via* anchorVia = dynamic_cast<BI_Via*>(&anchor)) {
+  bool    isRemovedVia = false;
+  BI_Via* anchorVia    = dynamic_cast<BI_Via*>(&anchor);
+  if (anchorVia) {
     if (mVias.contains(anchorVia)) {
       availableVias.removeOne(anchorVia);
     } else {
@@ -96,25 +95,29 @@ void BoardNetSegmentSplitter::findConnectedLinesAndPoints(
     }
   }
 
-  Q_ASSERT(!anchors.contains(&anchor));
-  anchors.append(&anchor);
+  Q_ASSERT(!segment.anchors.contains(&anchor));
+  segment.anchors.append(&anchor);
 
   GraphicsLayer* layer = nullptr;
   foreach (BI_NetLine* line, anchor.getNetLines()) {
-    if (availableNetLines.contains(line) && (!netlines.contains(line)) &&
+    if (isRemovedVia) {
+      segment.viasToReplace[anchorVia].insert(&line->getLayer());
+    }
+    if (availableNetLines.contains(line) &&
+        (!segment.netlines.contains(line)) &&
         ((!isRemovedVia) || (!layer) || (&line->getLayer() == layer))) {
       layer = &line->getLayer();
-      netlines.append(line);
+      segment.netlines.append(line);
       availableNetLines.removeOne(line);
       BI_NetLineAnchor* p2 = line->getOtherPoint(anchor);
       Q_ASSERT(p2);
       if (!processedAnchors.contains(p2)) {
-        findConnectedLinesAndPoints(*p2, processedAnchors, anchors, netlines,
+        findConnectedLinesAndPoints(*p2, processedAnchors, segment,
                                     availableVias, availableNetLines);
       }
     }
   }
-}
+}*/
 
 /*******************************************************************************
  *  End of File

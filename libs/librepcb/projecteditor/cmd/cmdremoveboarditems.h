@@ -24,6 +24,7 @@
  *  Includes
  ******************************************************************************/
 #include <librepcb/common/undocommandgroup.h>
+#include <librepcb/common/uuid.h>
 
 #include <QtCore>
 
@@ -31,6 +32,9 @@
  *  Namespace / Forward Declarations
  ******************************************************************************/
 namespace librepcb {
+
+class TraceAnchor;
+
 namespace project {
 
 class Board;
@@ -112,12 +116,11 @@ private:  // Methods
   /// @copydoc UndoCommand::performExecute()
   bool performExecute() override;
 
-  void                     splitUpNetSegment(BI_NetSegment&         netsegment,
-                                             const NetSegmentItems& itemsToRemove);
-  void                     createNewSubNetSegment(BI_NetSegment&         netsegment,
-                                                  const NetSegmentItems& items);
-  QVector<NetSegmentItems> getNonCohesiveNetSegmentSubSegments(
-      BI_NetSegment& segment, const NetSegmentItems& removedItems) noexcept;
+  void              splitUpNetSegment(BI_NetSegment&         netsegment,
+                                      const NetSegmentItems& itemsToRemove);
+  BI_NetLineAnchor* convertAnchor(const TraceAnchor&               anchor,
+                                  const QHash<Uuid, BI_NetPoint*>& netPointMap,
+                                  const QHash<Uuid, BI_Via*>& viaMap) const;
 
 private:  // Data
   Board& mBoard;

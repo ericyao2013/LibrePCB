@@ -27,6 +27,7 @@
 
 #include <librepcb/common/scopeguard.h>
 #include <librepcb/common/toolbox.h>
+#include <librepcb/project/boards/boardlayerstack.h>
 #include <librepcb/project/boards/cmd/cmdboardholeremove.h>
 #include <librepcb/project/boards/cmd/cmdboardnetsegmentadd.h>
 #include <librepcb/project/boards/cmd/cmdboardnetsegmentaddelements.h>
@@ -86,10 +87,10 @@ bool CmdRemoveBoardItems::performExecute() {
   // also remove all netlines from vias
   // TODO: we shouldn't do that! but currenlty it leads to errors when not doing
   // it...
-  foreach (BI_Via* via, mVias) {
-    Q_ASSERT(via->isAddedToBoard());
-    mNetLines += via->getNetLines();
-  }
+  // foreach (BI_Via* via, mVias) {
+  //  Q_ASSERT(via->isAddedToBoard());
+  //  mNetLines += via->getNetLines();
+  //}
 
   // determine all affected netsegments and their items to remove
   NetSegmentItemList netSegmentItemsToRemove;
@@ -175,92 +176,84 @@ bool CmdRemoveBoardItems::performExecute() {
 
 void CmdRemoveBoardItems::splitUpNetSegment(
     BI_NetSegment& netsegment, const NetSegmentItems& itemsToRemove) {
-  // determine all resulting sub-netsegments
-  QVector<NetSegmentItems> subsegments =
-      getNonCohesiveNetSegmentSubSegments(netsegment, itemsToRemove);
-
-  // remove the whole netsegment
-  execNewChildCmd(new CmdBoardNetSegmentRemove(netsegment));
-
-  // create new sub-netsegments
-  foreach (const NetSegmentItems& subsegment, subsegments) {
-    createNewSubNetSegment(netsegment, subsegment);  // can throw
-  }
-}
-
-void CmdRemoveBoardItems::createNewSubNetSegment(BI_NetSegment& netsegment,
-                                                 const NetSegmentItems& items) {
-  // create new netsegment
-  CmdBoardNetSegmentAdd* cmdAddNetSegment = new CmdBoardNetSegmentAdd(
-      netsegment.getBoard(), netsegment.getNetSignal());
-  execNewChildCmd(cmdAddNetSegment);  // can throw
-  BI_NetSegment* newNetSegment = cmdAddNetSegment->getNetSegment();
-  Q_ASSERT(newNetSegment);
-  QScopedPointer<CmdBoardNetSegmentAddElements> cmdAddElements(
-      new CmdBoardNetSegmentAddElements(*newNetSegment));
-
-  // copy vias
-  QHash<const BI_NetLineAnchor*, BI_NetLineAnchor*> anchorMap;
-  foreach (const BI_Via* via, items.vias) {
-    BI_Via* newVia =
-        cmdAddElements->addVia(via->getPosition(), via->getShape(),
-                               via->getSize(), via->getDrillDiameter());
-    Q_ASSERT(newVia);
-    anchorMap.insert(via, newVia);
-  }
-
-  // copy netpoints
-  foreach (const BI_NetPoint* netpoint, items.netpoints) {
-    BI_NetPoint* newNetPoint =
-        cmdAddElements->addNetPoint(netpoint->getPosition());
-    Q_ASSERT(newNetPoint);
-    anchorMap.insert(netpoint, newNetPoint);
-  }
-
-  // copy netlines
-  foreach (const BI_NetLine* netline, items.netlines) {
-    BI_NetLineAnchor* p1 =
-        anchorMap.value(&netline->getStartPoint(), &netline->getStartPoint());
-    Q_ASSERT(p1);
-    BI_NetLineAnchor* p2 =
-        anchorMap.value(&netline->getEndPoint(), &netline->getEndPoint());
-    Q_ASSERT(p2);
-    BI_NetLine* newNetLine = cmdAddElements->addNetLine(
-        *p1, *p2, netline->getLayer(), netline->getWidth());
-    Q_ASSERT(newNetLine);
-  }
-
-  execNewChildCmd(cmdAddElements.take());  // can throw
-}
-
-QVector<CmdRemoveBoardItems::NetSegmentItems>
-CmdRemoveBoardItems::getNonCohesiveNetSegmentSubSegments(
-    BI_NetSegment& segment, const NetSegmentItems& removedItems) noexcept {
   // only works with segments which are added to board!!!
-  Q_ASSERT(segment.isAddedToBoard());
+  Q_ASSERT(netsegment.isAddedToBoard());
 
+  // determine all resulting sub-netsegments
   BoardNetSegmentSplitter splitter;
-  foreach (BI_Via* via, Toolbox::toSet(segment.getVias()) - removedItems.vias) {
-    splitter.addVia(via);
+  foreach (BI_NetPoint* netpoint, Toolbox::toSet(netsegment.getNetPoints()) -
+                                      itemsToRemove.netpoints) {
+    splitter.addNetPoint(
+        NetPoint(netpoint->getUuid(), netpoint->getPosition()));
+  }
+  foreach (BI_Via* via,
+           Toolbox::toSet(netsegment.getVias()) - itemsToRemove.vias) {
+    splitter.addVia(via->getVia());
   }
   foreach (BI_NetLine* netline,
-           Toolbox::toSet(segment.getNetLines()) - removedItems.netlines) {
-    splitter.addNetLine(netline);
+           Toolbox::toSet(netsegment.getNetLines()) - itemsToRemove.netlines) {
+    splitter.addTrace(netline->getTrace());
   }
-  QVector<NetSegmentItems> segments;
-  foreach (const BoardNetSegmentSplitter::Segment& seg, splitter.split()) {
-    NetSegmentItems items;
-    foreach (BI_NetLineAnchor* anchor, seg.anchors) {
-      if (BI_NetPoint* netpoint = dynamic_cast<BI_NetPoint*>(anchor)) {
-        items.netpoints.insert(netpoint);
-      } else if (BI_Via* via = dynamic_cast<BI_Via*>(anchor)) {
-        items.vias.insert(via);
-      }
+  QList<BoardNetSegmentSplitter::Segment> subsegments = splitter.split();
+
+  // remove the whole netsegment
+  execNewChildCmd(new CmdBoardNetSegmentRemove(netsegment));  // can throw
+
+  // create new sub-netsegments
+  foreach (const BoardNetSegmentSplitter::Segment& subsegment, subsegments) {
+    // create new netsegment
+    CmdBoardNetSegmentAdd* cmdAddNetSegment = new CmdBoardNetSegmentAdd(
+        netsegment.getBoard(), netsegment.getNetSignal());
+    execNewChildCmd(cmdAddNetSegment);  // can throw
+    BI_NetSegment* newNetSegment = cmdAddNetSegment->getNetSegment();
+    Q_ASSERT(newNetSegment);
+    QScopedPointer<CmdBoardNetSegmentAddElements> cmdAddElements(
+        new CmdBoardNetSegmentAddElements(*newNetSegment));
+
+    // create netpoints, assigning new UUIDs althought it wouldn't be needed
+    QHash<Uuid, BI_NetPoint*> netPointMap;
+    foreach (const NetPoint& netpoint, subsegment.netpoints) {
+      netPointMap.insert(netpoint.getUuid(),
+                         cmdAddElements->addNetPoint(netpoint.getPosition()));
     }
-    items.netlines = Toolbox::toSet(seg.netlines);
-    segments.append(items);
+
+    // create vias, keeping original UUIDs
+    QHash<Uuid, BI_Via*> viaMap;
+    foreach (const Via& via, subsegment.vias) {
+      viaMap.insert(via.getUuid(), cmdAddElements->addVia(via));
+    }
+
+    // create traces, keeping original UUIDs
+    foreach (const Trace& trace, subsegment.traces) {
+      BI_NetLineAnchor* start =
+          convertAnchor(trace.getStartPoint(), netPointMap, viaMap);
+      BI_NetLineAnchor* end =
+          convertAnchor(trace.getEndPoint(), netPointMap, viaMap);
+      GraphicsLayer* layer = mBoard.getLayerStack().getLayer(*trace.getLayer());
+      if ((!start) || (!end) || (!layer)) throw LogicError(__FILE__, __LINE__);
+      BI_NetLine* newNetLine =
+          cmdAddElements->addNetLine(*start, *end, *layer, trace.getWidth());
+      Q_ASSERT(newNetLine);
+    }
+
+    execNewChildCmd(cmdAddElements.take());  // can throw
   }
-  return segments;
+}
+
+BI_NetLineAnchor* CmdRemoveBoardItems::convertAnchor(
+    const TraceAnchor& anchor, const QHash<Uuid, BI_NetPoint*>& netPointMap,
+    const QHash<Uuid, BI_Via*>& viaMap) const {
+  if (const tl::optional<Uuid>& uuid = anchor.tryGetNetPoint()) {
+    return netPointMap.value(*uuid);
+  } else if (const tl::optional<Uuid>& uuid = anchor.tryGetVia()) {
+    return viaMap.value(*uuid);
+  } else if (const tl::optional<TraceAnchor::PadAnchor>& pad =
+                 anchor.tryGetPad()) {
+    BI_Device* device = mBoard.getDeviceInstanceByComponentUuid(pad->device);
+    return device ? device->getFootprint().getPad(pad->pad) : nullptr;
+  } else {
+    return nullptr;
+  }
 }
 
 /*******************************************************************************

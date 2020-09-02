@@ -23,6 +23,9 @@
 /*******************************************************************************
  *  Includes
  ******************************************************************************/
+#include <librepcb/common/geometry/netpoint.h>
+#include <librepcb/common/geometry/trace.h>
+#include <librepcb/common/geometry/via.h>
 #include <librepcb/common/units/all_length_units.h>
 #include <librepcb/common/uuid.h>
 
@@ -33,14 +36,10 @@
  *  Namespace / Forward Declarations
  ******************************************************************************/
 namespace librepcb {
+
+class GraphicsLayer;
+
 namespace project {
-
-class BI_NetSegment;
-class BI_NetPoint;
-class BI_NetLine;
-class BI_NetLineAnchor;
-class BI_Via;
-
 namespace editor {
 
 /*******************************************************************************
@@ -54,8 +53,9 @@ class BoardNetSegmentSplitter final {
 public:
   // Types
   struct Segment {
-    QList<BI_NetLineAnchor*> anchors;
-    QList<BI_NetLine*>       netlines;
+    QList<NetPoint> netpoints;
+    QList<Via>      vias;
+    QList<Trace>    traces;
   };
 
   // Constructors / Destructor
@@ -64,13 +64,17 @@ public:
   ~BoardNetSegmentSplitter() noexcept;
 
   // General Methods
-  void addVia(BI_Via* via) noexcept {
+  void addNetPoint(const NetPoint& netpoint) noexcept {
+    Q_ASSERT(!mNetPoints.contains(netpoint));
+    mNetPoints.append(netpoint);
+  }
+  void addVia(const Via& via) noexcept {
     Q_ASSERT(!mVias.contains(via));
     mVias.append(via);
   }
-  void addNetLine(BI_NetLine* netline) noexcept {
-    Q_ASSERT(!mNetLines.contains(netline));
-    mNetLines.append(netline);
+  void addTrace(const Trace& trace) noexcept {
+    Q_ASSERT(!mTraces.contains(trace));
+    mTraces.append(trace);
   }
   QList<Segment> split() const noexcept;
 
@@ -79,17 +83,17 @@ public:
       delete;
 
 private:  // Methods
-  void findConnectedLinesAndPoints(BI_NetLineAnchor&         anchor,
-                                   QList<BI_NetLineAnchor*>& processedAnchors,
-                                   QList<BI_NetLineAnchor*>& anchors,
-                                   QList<BI_NetLine*>&       netlines,
-                                   QList<BI_Via*>&           availableVias,
-                                   QList<BI_NetLine*>& availableNetLines) const
-      noexcept;
-
+          // void findConnectedLinesAndPoints(BI_NetLineAnchor&         anchor,
+          //                                 QList<BI_NetLineAnchor*>&
+          //                                 processedAnchors, Segment& segment,
+          //                                 QList<BI_Via*>& availableVias,
+          //                                 QList<BI_NetLine*>&
+          //                                 availableNetLines) const
+          //    noexcept;
 private:  // Data
-  QList<BI_Via*>     mVias;
-  QList<BI_NetLine*> mNetLines;
+  QList<NetPoint> mNetPoints;
+  QList<Via>      mVias;
+  QList<Trace>    mTraces;
 };
 
 /*******************************************************************************

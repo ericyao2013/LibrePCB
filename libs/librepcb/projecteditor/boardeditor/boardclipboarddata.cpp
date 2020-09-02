@@ -22,6 +22,8 @@
  ******************************************************************************/
 #include "boardclipboarddata.h"
 
+#include <librepcb/common/fileio/transactionaldirectory.h>
+#include <librepcb/common/fileio/transactionalfilesystem.h>
 #include <librepcb/project/circuit/netsignal.h>
 
 #include <QtCore>
@@ -40,8 +42,10 @@ namespace editor {
 
 BoardClipboardData::BoardClipboardData(const Uuid&  boardUuid,
                                        const Point& cursorPos) noexcept
-  : mBoardUuid(boardUuid),
+  : mFileSystem(TransactionalFileSystem::openRW(FilePath::getRandomTempPath())),
+    mBoardUuid(boardUuid),
     mCursorPos(cursorPos),
+    mDevices(),
     mNetSegments(),
     mPlanes(),
     mPolygons(),
@@ -51,9 +55,13 @@ BoardClipboardData::BoardClipboardData(const Uuid&  boardUuid,
 
 BoardClipboardData::BoardClipboardData(const QByteArray& mimeData)
   : BoardClipboardData(Uuid::createRandom(), Point()) {
-  SExpression root = SExpression::parse(mimeData, FilePath());
-  mBoardUuid       = root.getValueByPath<Uuid>("board");
-  mCursorPos       = Point(root.getChildByPath("cursor_position"));
+  mFileSystem->loadFromZip(mimeData);  // can throw
+
+  SExpression root =
+      SExpression::parse(mFileSystem->read("board.lp"), FilePath());
+  mBoardUuid = root.getValueByPath<Uuid>("board");
+  mCursorPos = Point(root.getChildByPath("cursor_position"));
+  mDevices.loadFromSExpression(root);
   mNetSegments.loadFromSExpression(root);
   mPlanes.loadFromSExpression(root);
   mPolygons.loadFromSExpression(root);
@@ -62,6 +70,21 @@ BoardClipboardData::BoardClipboardData(const QByteArray& mimeData)
 }
 
 BoardClipboardData::~BoardClipboardData() noexcept {
+  // Clean up the temporary directory, but destroy the TransactionalFileSystem
+  // object first since it has a lock on the directory.
+  FilePath fp = mFileSystem->getAbsPath();
+  mFileSystem.reset();
+  QDir(fp.toStr()).removeRecursively();
+}
+
+/*******************************************************************************
+ *  Getters
+ ******************************************************************************/
+
+std::unique_ptr<TransactionalDirectory> BoardClipboardData::getDirectory(
+    const QString& path) noexcept {
+  return std::unique_ptr<TransactionalDirectory>(
+      new TransactionalDirectory(mFileSystem, path));
 }
 
 /*******************************************************************************
@@ -71,10 +94,14 @@ BoardClipboardData::~BoardClipboardData() noexcept {
 std::unique_ptr<QMimeData> BoardClipboardData::toMimeData() const {
   SExpression sexpr =
       serializeToDomElement("librepcb_clipboard_board");  // can throw
+  mFileSystem->write("board.lp", sexpr.toByteArray());
+
+  QByteArray zip = mFileSystem->exportToZip();
 
   std::unique_ptr<QMimeData> data(new QMimeData());
-  data->setData(getMimeType(), sexpr.toByteArray());
-  data->setText(sexpr.toByteArray());
+  data->setData(getMimeType(), zip);
+  data->setData("application/zip", zip);
+  data->setText(sexpr.toByteArray());  // TODO: Remove this
   return data;
 }
 
@@ -96,6 +123,7 @@ std::unique_ptr<BoardClipboardData> BoardClipboardData::fromMimeData(
 void BoardClipboardData::serialize(SExpression& root) const {
   root.appendChild(mCursorPos.serializeToDomElement("cursor_position"), true);
   root.appendChild("board", mBoardUuid, true);
+  mDevices.serialize(root);
   mNetSegments.serialize(root);
   mPlanes.serialize(root);
   mPolygons.serialize(root);

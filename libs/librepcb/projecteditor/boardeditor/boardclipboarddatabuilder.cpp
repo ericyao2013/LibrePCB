@@ -26,8 +26,12 @@
 
 #include <librepcb/common/geometry/polygon.h>
 #include <librepcb/common/graphics/graphicslayer.h>
+#include <librepcb/library/dev/device.h>
+#include <librepcb/library/pkg/package.h>
 #include <librepcb/project/boards/board.h>
 #include <librepcb/project/boards/boardselectionquery.h>
+#include <librepcb/project/boards/items/bi_device.h>
+#include <librepcb/project/boards/items/bi_footprint.h>
 #include <librepcb/project/boards/items/bi_footprintpad.h>
 #include <librepcb/project/boards/items/bi_hole.h>
 #include <librepcb/project/boards/items/bi_netline.h>
@@ -71,6 +75,7 @@ std::unique_ptr<BoardClipboardData> BoardClipboardDataBuilder::generate(
 
   // get all selected items
   std::unique_ptr<BoardSelectionQuery> query(mBoard.createSelectionQuery());
+  query->addDeviceInstancesOfSelectedFootprints();
   query->addSelectedVias();
   query->addSelectedNetLines();
   query->addSelectedPlanes();
@@ -78,8 +83,34 @@ std::unique_ptr<BoardClipboardData> BoardClipboardDataBuilder::generate(
   query->addSelectedBoardStrokeTexts();
   query->addSelectedHoles();
 
+  // add devices
+  foreach (BI_Device* device, query->getDeviceInstances()) {
+    // copy library device
+    std::unique_ptr<TransactionalDirectory> devDir =
+        data->getDirectory("dev/" % device->getLibDevice().getUuid().toStr());
+    if (devDir->getFiles().isEmpty()) {
+      device->getLibDevice().getDirectory().copyTo(*devDir);
+    }
+    // copy library package
+    std::unique_ptr<TransactionalDirectory> pkgDir =
+        data->getDirectory("pkg/" % device->getLibPackage().getUuid().toStr());
+    if (pkgDir->getFiles().isEmpty()) {
+      device->getLibPackage().getDirectory().copyTo(*pkgDir);
+    }
+    // create list of stroke texts
+    StrokeTextList strokeTexts;
+    foreach (const BI_StrokeText* t, device->getFootprint().getStrokeTexts()) {
+      strokeTexts.append(std::make_shared<StrokeText>(t->getText()));
+    }
+    // add device
+    data->getDevices().append(std::make_shared<BoardClipboardData::Device>(
+        device->getComponentInstanceUuid(), device->getLibDevice().getUuid(),
+        device->getLibFootprint().getUuid(), device->getPosition(),
+        device->getRotation(), device->getIsMirrored(), strokeTexts));
+  }
+
   // add (splitted) net segments including netpoints, netlines and netlabels
-  foreach (BI_NetSegment* netsegment, mBoard.getNetSegments()) {
+  /*foreach (BI_NetSegment* netsegment, mBoard.getNetSegments()) {
     BoardNetSegmentSplitter splitter;
     foreach (BI_Via* via, query->getVias()) {
       if (&via->getNetSegment() == netsegment) {
@@ -98,85 +129,94 @@ std::unique_ptr<BoardClipboardData> BoardClipboardDataBuilder::generate(
               netsegment->getNetSignal().getName());
       data->getNetSegments().append(newSegment);
 
-      QHash<BI_NetLineAnchor*, std::shared_ptr<BoardClipboardData::NetPoint>>
-          replacedNetPoints;
+      QHash<BI_NetLineAnchor*, std::shared_ptr<NetPoint>> replacedNetPoints;
       foreach (BI_NetLineAnchor* anchor, seg.anchors) {
         if (BI_NetPoint* np = dynamic_cast<BI_NetPoint*>(anchor)) {
           newSegment->points.append(
-              std::make_shared<BoardClipboardData::NetPoint>(
-                  np->getUuid(), np->getPosition()));
+              std::make_shared<NetPoint>(np->getUuid(), np->getPosition()));
         } else if (BI_Via* via = dynamic_cast<BI_Via*>(anchor)) {
           if (query->getVias().contains(via)) {
-            newSegment->vias.append(std::make_shared<BoardClipboardData::Via>(
-                via->getUuid(), via->getPosition(), via->getShape(),
-                via->getSize(), via->getDrillDiameter()));
+            newSegment->vias.append(std::make_shared<Via>(via->getVia()));
           } else {
             // Via will not be copied, thus replacing it by a netpoint
-            std::shared_ptr<BoardClipboardData::NetPoint> np =
-                std::make_shared<BoardClipboardData::NetPoint>(
-                    Uuid::createRandom(), via->getPosition());
+            std::shared_ptr<NetPoint> np = std::make_shared<NetPoint>(
+                Uuid::createRandom(), via->getPosition());
             replacedNetPoints.insert(via, np);
             newSegment->points.append(np);
           }
         } else if (BI_FootprintPad* pad =
                        dynamic_cast<BI_FootprintPad*>(anchor)) {
-          // Pad will not be copied, thus replacing it by a netpoint
-          std::shared_ptr<BoardClipboardData::NetPoint> np =
-              std::make_shared<BoardClipboardData::NetPoint>(
-                  Uuid::createRandom(), pad->getPosition());
-          replacedNetPoints.insert(pad, np);
-          newSegment->points.append(np);
+          if (!query->getDeviceInstances().contains(
+                  &pad->getFootprint().getDeviceInstance())) {
+            // Pad will not be copied, thus replacing it by a netpoint
+            std::shared_ptr<NetPoint> np = std::make_shared<NetPoint>(
+                Uuid::createRandom(), pad->getPosition());
+            replacedNetPoints.insert(pad, np);
+            newSegment->points.append(np);
+          }
         }
       }
       foreach (BI_NetLine* netline, seg.netlines) {
-        std::shared_ptr<BoardClipboardData::NetLine> copy =
-            std::make_shared<BoardClipboardData::NetLine>(
-                netline->getUuid(), netline->getLayer().getName(),
-                netline->getWidth());
+        tl::optional<TraceAnchor> startAnchor;
         if (BI_NetPoint* netpoint =
                 dynamic_cast<BI_NetPoint*>(&netline->getStartPoint())) {
-          copy->startJunction = netpoint->getUuid();
+          startAnchor = TraceAnchor::netPoint(netpoint->getUuid());
         } else if (BI_Via* via =
                        dynamic_cast<BI_Via*>(&netline->getStartPoint())) {
           if (auto np = replacedNetPoints.value(via)) {
-            copy->startJunction = np->uuid;
+            startAnchor = TraceAnchor::netPoint(np->getUuid());
           } else {
-            copy->startVia = via->getUuid();
+            startAnchor = TraceAnchor::via(via->getUuid());
           }
         } else if (BI_FootprintPad* pad = dynamic_cast<BI_FootprintPad*>(
                        &netline->getStartPoint())) {
           if (auto np = replacedNetPoints.value(pad)) {
-            copy->startJunction = np->uuid;
+            startAnchor = TraceAnchor::netPoint(np->getUuid());
           } else {
-            Q_ASSERT(false);
+            startAnchor = TraceAnchor::pad(pad->getFootprint()
+                                               .getDeviceInstance()
+                                               .getComponentInstanceUuid(),
+                                           pad->getLibPadUuid());
           }
         } else {
           Q_ASSERT(false);
         }
+        Q_ASSERT(startAnchor);
+
+        tl::optional<TraceAnchor> endAnchor;
         if (BI_NetPoint* netpoint =
                 dynamic_cast<BI_NetPoint*>(&netline->getEndPoint())) {
-          copy->endJunction = netpoint->getUuid();
+          endAnchor = TraceAnchor::netPoint(netpoint->getUuid());
         } else if (BI_Via* via =
                        dynamic_cast<BI_Via*>(&netline->getEndPoint())) {
           if (auto np = replacedNetPoints.value(via)) {
-            copy->endJunction = np->uuid;
+            endAnchor = TraceAnchor::netPoint(np->getUuid());
           } else {
-            copy->endVia = via->getUuid();
+            endAnchor = TraceAnchor::via(via->getUuid());
           }
         } else if (BI_FootprintPad* pad = dynamic_cast<BI_FootprintPad*>(
                        &netline->getEndPoint())) {
           if (auto np = replacedNetPoints.value(pad)) {
-            copy->endJunction = np->uuid;
+            endAnchor = TraceAnchor::netPoint(np->getUuid());
           } else {
-            Q_ASSERT(false);
+            endAnchor = TraceAnchor::pad(pad->getFootprint()
+                                             .getDeviceInstance()
+                                             .getComponentInstanceUuid(),
+                                         pad->getLibPadUuid());
           }
         } else {
           Q_ASSERT(false);
         }
-        newSegment->lines.append(copy);
+        Q_ASSERT(endAnchor);
+
+        std::shared_ptr<Trace> copy = std::make_shared<Trace>(
+            netline->getUuid(),
+            GraphicsLayerName(netline->getLayer().getName()),
+            netline->getWidth(), *startAnchor, *endAnchor);
+        newSegment->traces.append(copy);
       }
     }
-  }
+  }*/
 
   // add planes
   foreach (BI_Plane* plane, query->getPlanes()) {
