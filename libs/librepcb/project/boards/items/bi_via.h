@@ -56,7 +56,7 @@ public:
   enum class Shape { Round, Square, Octagon };
 
   // Constructors / Destructor
-  BI_Via()                    = delete;
+  BI_Via() = delete;
   BI_Via(const BI_Via& other) = delete;
   BI_Via(BI_NetSegment& netsegment, const BI_Via& other);
   BI_Via(BI_NetSegment& netsegment, const SExpression& node);
@@ -65,10 +65,10 @@ public:
   ~BI_Via() noexcept;
 
   // Getters
-  BI_NetSegment&        getNetSegment() const noexcept { return mNetSegment; }
-  NetSignal&            getNetSignalOfNetSegment() const noexcept;
-  const Uuid&           getUuid() const noexcept { return mUuid; }
-  Shape                 getShape() const noexcept { return mShape; }
+  BI_NetSegment& getNetSegment() const noexcept { return mNetSegment; }
+  NetSignal& getNetSignalOfNetSegment() const noexcept;
+  const Uuid& getUuid() const noexcept { return mUuid; }
+  Shape getShape() const noexcept { return mShape; }
   const PositiveLength& getDrillDiameter() const noexcept {
     return mDrillDiameter;
   }
@@ -97,35 +97,35 @@ public:
   // Inherited from BI_Base
   Type_t getType() const noexcept override { return BI_Base::Type_t::Via; }
   const Point& getPosition() const noexcept override { return mPosition; }
-  bool         getIsMirrored() const noexcept override { return false; }
+  bool getIsMirrored() const noexcept override { return false; }
   QPainterPath getGrabAreaScenePx() const noexcept override;
-  void         setSelected(bool selected) noexcept override;
+  void setSelected(bool selected) noexcept override;
 
   // Inherited from BI_NetLineAnchor
-  void                     registerNetLine(BI_NetLine& netline) override;
-  void                     unregisterNetLine(BI_NetLine& netline) override;
+  void registerNetLine(BI_NetLine& netline) override;
+  void unregisterNetLine(BI_NetLine& netline) override;
   const QSet<BI_NetLine*>& getNetLines() const noexcept override {
     return mRegisteredNetLines;
   }
 
   // Operator Overloadings
   BI_Via& operator=(const BI_Via& rhs) = delete;
-  bool    operator==(const BI_Via& rhs) noexcept { return (this == &rhs); }
-  bool    operator!=(const BI_Via& rhs) noexcept { return (this != &rhs); }
+  bool operator==(const BI_Via& rhs) noexcept { return (this == &rhs); }
+  bool operator!=(const BI_Via& rhs) noexcept { return (this != &rhs); }
 
 private:
   void init();
   void boardAttributesChanged();
 
   // General
-  BI_NetSegment&          mNetSegment;
+  BI_NetSegment& mNetSegment;
   QScopedPointer<BGI_Via> mGraphicsItem;
   QMetaObject::Connection mHighlightChangedConnection;
 
   // Attributes
-  Uuid           mUuid;
-  Point          mPosition;
-  Shape          mShape;
+  Uuid mUuid;
+  Point mPosition;
+  Shape mShape;
   PositiveLength mSize;
   PositiveLength mDrillDiameter;
 

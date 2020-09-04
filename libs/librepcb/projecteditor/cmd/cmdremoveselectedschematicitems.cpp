@@ -231,7 +231,7 @@ void CmdRemoveSelectedSchematicItems::splitUpNetSegment(
   // assign new netsignal to each subsegment (with some exceptions)
   foreach (SI_NetSegment* subsegment, newSubsegments) {
     NetSignal* newNetSignal = nullptr;
-    QString    forcedName   = subsegment->getForcedNetName();
+    QString forcedName = subsegment->getForcedNetName();
     if (!forcedName.isEmpty()) {
       // set netsignal to forced name
       if (subsegment->getNetSignal().getName() != forcedName) {
@@ -243,7 +243,7 @@ void CmdRemoveSelectedSchematicItems::splitUpNetSegment(
               new CmdNetSignalAdd(subsegment->getCircuit(),
                                   subsegment->getNetSignal().getNetClass(),
                                   CircuitIdentifier(forcedName));  // can throw
-          execNewChildCmd(cmdAddNetSignal);                        // can throw
+          execNewChildCmd(cmdAddNetSignal);  // can throw
           newNetSignal = cmdAddNetSignal->getNetSignal();
           Q_ASSERT(newNetSignal);
         }
@@ -313,8 +313,8 @@ void CmdRemoveSelectedSchematicItems::removeNetLabel(SI_NetLabel& netlabel) {
   if (netlabel.getNetSegment().getNetLabels().isEmpty()) {
     // are there any forced net names of the net segment?
     CmdNetSignalAdd* cmd;
-    NetClass&     netclass = netlabel.getNetSignalOfNetSegment().getNetClass();
-    QSet<QString> names    = netlabel.getNetSegment().getForcedNetNames();
+    NetClass& netclass = netlabel.getNetSignalOfNetSegment().getNetClass();
+    QSet<QString> names = netlabel.getNetSegment().getForcedNetNames();
     if (names.isEmpty()) {
       // create new netsignal with auto-name
       cmd = new CmdNetSignalAdd(mSchematic.getProject().getCircuit(), netclass);
@@ -382,8 +382,8 @@ void CmdRemoveSelectedSchematicItems::disconnectComponentSignalInstance(
 }
 
 QList<CmdRemoveSelectedSchematicItems::NetSegmentItems>
-CmdRemoveSelectedSchematicItems::getNonCohesiveNetSegmentSubSegments(
-    SI_NetSegment& segment, const NetSegmentItems& removedItems) noexcept {
+    CmdRemoveSelectedSchematicItems::getNonCohesiveNetSegmentSubSegments(
+        SI_NetSegment& segment, const NetSegmentItems& removedItems) noexcept {
   SchematicNetSegmentSplitter splitter;
   foreach (SI_NetLine* netline, segment.getNetLines()) {
     if (!removedItems.netlines.contains(netline)) {
@@ -403,7 +403,7 @@ CmdRemoveSelectedSchematicItems::getNonCohesiveNetSegmentSubSegments(
         items.netpoints.insert(netpoint);
       }
     }
-    items.netlines  = Toolbox::toSet(seg.netlines);
+    items.netlines = Toolbox::toSet(seg.netlines);
     items.netlabels = Toolbox::toSet(seg.netlabels);
     segments.append(items);
   }

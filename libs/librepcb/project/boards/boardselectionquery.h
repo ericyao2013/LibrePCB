@@ -58,13 +58,13 @@ class BoardSelectionQuery final : public QObject {
 
 public:
   // Constructors / Destructor
-  BoardSelectionQuery()                                 = delete;
+  BoardSelectionQuery() = delete;
   BoardSelectionQuery(const BoardSelectionQuery& other) = delete;
   BoardSelectionQuery(const QMap<Uuid, BI_Device*>& deviceInstances,
-                      const QList<BI_NetSegment*>&  netsegments,
-                      const QList<BI_Plane*>&       planes,
-                      const QList<BI_Polygon*>&     polygons,
-                      const QList<BI_StrokeText*>&  strokeTexts,
+                      const QList<BI_NetSegment*>& netsegments,
+                      const QList<BI_Plane*>& planes,
+                      const QList<BI_Polygon*>& polygons,
+                      const QList<BI_StrokeText*>& strokeTexts,
                       const QList<BI_Hole*>& holes, QObject* parent = nullptr);
   ~BoardSelectionQuery() noexcept;
 
@@ -78,8 +78,8 @@ public:
   const QSet<BI_NetLine*>& getNetLines() const noexcept {
     return mResultNetLines;
   }
-  const QSet<BI_Via*>&     getVias() const noexcept { return mResultVias; }
-  const QSet<BI_Plane*>&   getPlanes() const noexcept { return mResultPlanes; }
+  const QSet<BI_Via*>& getVias() const noexcept { return mResultVias; }
+  const QSet<BI_Plane*>& getPlanes() const noexcept { return mResultPlanes; }
   const QSet<BI_Polygon*>& getPolygons() const noexcept {
     return mResultPolygons;
   }
@@ -87,7 +87,7 @@ public:
     return mResultStrokeTexts;
   }
   const QSet<BI_Hole*>& getHoles() const noexcept { return mResultHoles; }
-  int                   getResultCount() const noexcept;
+  int getResultCount() const noexcept;
   bool isResultEmpty() const noexcept { return (getResultCount() == 0); }
 
   // General Methods
@@ -108,21 +108,21 @@ public:
 private:
   // references to the Board object
   const QMap<Uuid, BI_Device*>& mDevices;
-  const QList<BI_NetSegment*>&  mNetSegments;
-  const QList<BI_Plane*>&       mPlanes;
-  const QList<BI_Polygon*>&     mPolygons;
-  const QList<BI_StrokeText*>&  mStrokeTexts;
-  const QList<BI_Hole*>&        mHoles;
+  const QList<BI_NetSegment*>& mNetSegments;
+  const QList<BI_Plane*>& mPlanes;
+  const QList<BI_Polygon*>& mPolygons;
+  const QList<BI_StrokeText*>& mStrokeTexts;
+  const QList<BI_Hole*>& mHoles;
 
   // query result
-  QSet<BI_Device*>     mResultDeviceInstances;
-  QSet<BI_NetPoint*>   mResultNetPoints;
-  QSet<BI_NetLine*>    mResultNetLines;
-  QSet<BI_Via*>        mResultVias;
-  QSet<BI_Plane*>      mResultPlanes;
-  QSet<BI_Polygon*>    mResultPolygons;
+  QSet<BI_Device*> mResultDeviceInstances;
+  QSet<BI_NetPoint*> mResultNetPoints;
+  QSet<BI_NetLine*> mResultNetLines;
+  QSet<BI_Via*> mResultVias;
+  QSet<BI_Plane*> mResultPlanes;
+  QSet<BI_Polygon*> mResultPolygons;
   QSet<BI_StrokeText*> mResultStrokeTexts;
-  QSet<BI_Hole*>       mResultHoles;
+  QSet<BI_Hole*> mResultHoles;
 };
 
 /*******************************************************************************

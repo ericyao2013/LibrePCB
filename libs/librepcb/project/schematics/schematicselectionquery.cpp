@@ -57,7 +57,7 @@ SchematicSelectionQuery::~SchematicSelectionQuery() noexcept {
 
 int SchematicSelectionQuery::getResultCount() const noexcept {
   return mResultSymbols.count() + mResultNetPoints.count() +
-         mResultNetLines.count() + mResultNetLabels.count();
+      mResultNetLines.count() + mResultNetLabels.count();
 }
 
 /*******************************************************************************

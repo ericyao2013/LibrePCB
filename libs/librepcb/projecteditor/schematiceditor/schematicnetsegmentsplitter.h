@@ -55,8 +55,8 @@ public:
   // Types
   struct Segment {
     QList<SI_NetLineAnchor*> anchors;
-    QList<SI_NetLine*>       netlines;
-    QList<SI_NetLabel*>      netlabels;
+    QList<SI_NetLine*> netlines;
+    QList<SI_NetLabel*> netlabels;
   };
 
   // Constructors / Destructor
@@ -77,24 +77,24 @@ public:
   QList<Segment> split() const noexcept;
 
   // Operator Overloadings
-  SchematicNetSegmentSplitter& operator       =(
+  SchematicNetSegmentSplitter& operator=(
       const SchematicNetSegmentSplitter& rhs) = delete;
 
 private:  // Methods
-  void findConnectedLinesAndPoints(SI_NetLineAnchor&         anchor,
+  void findConnectedLinesAndPoints(SI_NetLineAnchor& anchor,
                                    QList<SI_NetLineAnchor*>& processedAnchors,
                                    QList<SI_NetLineAnchor*>& anchors,
-                                   QList<SI_NetLine*>&       netlines,
+                                   QList<SI_NetLine*>& netlines,
                                    QList<SI_NetLine*>& availableNetLines) const
       noexcept;
-  int getNearestNetSegmentOfNetLabel(const SI_NetLabel&    netlabel,
+  int getNearestNetSegmentOfNetLabel(const SI_NetLabel& netlabel,
                                      const QList<Segment>& segments) const
       noexcept;
   Length getDistanceBetweenNetLabelAndNetSegment(
       const SI_NetLabel& netlabel, const Segment& netsegment) const noexcept;
 
 private:  // Data
-  QList<SI_NetLine*>  mNetLines;
+  QList<SI_NetLine*> mNetLines;
   QList<SI_NetLabel*> mNetLabels;
 };
 

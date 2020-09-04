@@ -52,11 +52,11 @@ class SchematicSelectionQuery final : public QObject {
 
 public:
   // Constructors / Destructor
-  SchematicSelectionQuery()                                     = delete;
+  SchematicSelectionQuery() = delete;
   SchematicSelectionQuery(const SchematicSelectionQuery& other) = delete;
-  SchematicSelectionQuery(const QList<SI_Symbol*>&     symbols,
+  SchematicSelectionQuery(const QList<SI_Symbol*>& symbols,
                           const QList<SI_NetSegment*>& netsegments,
-                          QObject*                     parent = nullptr);
+                          QObject* parent = nullptr);
   ~SchematicSelectionQuery() noexcept;
 
   // Getters
@@ -70,7 +70,7 @@ public:
   const QSet<SI_NetLabel*>& getNetLabels() const noexcept {
     return mResultNetLabels;
   }
-  int  getResultCount() const noexcept;
+  int getResultCount() const noexcept;
   bool isResultEmpty() const noexcept { return (getResultCount() == 0); }
 
   // General Methods
@@ -87,13 +87,13 @@ public:
 
 private:
   // references to the Schematic object
-  const QList<SI_Symbol*>&     mSymbols;
+  const QList<SI_Symbol*>& mSymbols;
   const QList<SI_NetSegment*>& mNetSegments;
 
   // query result
-  QSet<SI_Symbol*>   mResultSymbols;
+  QSet<SI_Symbol*> mResultSymbols;
   QSet<SI_NetPoint*> mResultNetPoints;
-  QSet<SI_NetLine*>  mResultNetLines;
+  QSet<SI_NetLine*> mResultNetLines;
   QSet<SI_NetLabel*> mResultNetLabels;
 };
 

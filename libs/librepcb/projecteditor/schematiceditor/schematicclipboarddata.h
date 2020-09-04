@@ -59,18 +59,18 @@ public:
   struct ComponentInstance : public SerializableObject {
     static constexpr const char* tagname = "component";
 
-    Uuid               uuid;
-    Uuid               libComponentUuid;
-    Uuid               libVariantUuid;
+    Uuid uuid;
+    Uuid libComponentUuid;
+    Uuid libVariantUuid;
     tl::optional<Uuid> libDeviceUuid;
-    CircuitIdentifier  name;
-    QString            value;
-    AttributeList      attributes;
+    CircuitIdentifier name;
+    QString value;
+    AttributeList attributes;
 
     Signal<ComponentInstance> onEdited;  ///< Dummy event, not used
 
     ComponentInstance(const Uuid& uuid, const Uuid& libComponentUuid,
-                      const Uuid&               libVariantUuid,
+                      const Uuid& libVariantUuid,
                       const tl::optional<Uuid>& libDeviceUuid,
                       const CircuitIdentifier& name, const QString& value,
                       const AttributeList& attributes)
@@ -108,12 +108,12 @@ public:
   struct SymbolInstance : public SerializableObject {
     static constexpr const char* tagname = "symbol";
 
-    Uuid  uuid;
-    Uuid  componentInstanceUuid;
-    Uuid  symbolVariantItemUuid;
+    Uuid uuid;
+    Uuid componentInstanceUuid;
+    Uuid symbolVariantItemUuid;
     Point position;
     Angle rotation;
-    bool  mirrored;
+    bool mirrored;
 
     Signal<SymbolInstance> onEdited;  ///< Dummy event, not used
 
@@ -151,8 +151,8 @@ public:
   struct NetPoint : public SerializableObject {
     static constexpr const char* tagname = "junction";
 
-    Uuid             uuid;
-    Point            position;
+    Uuid uuid;
+    Point position;
     Signal<NetPoint> onEdited;  ///< Dummy event, not used
 
     NetPoint(const Uuid& uuid, const Point& position)
@@ -173,14 +173,14 @@ public:
   struct NetLine : public SerializableObject {
     static constexpr const char* tagname = "line";
 
-    Uuid               uuid;
+    Uuid uuid;
     tl::optional<Uuid> startJunction;
     tl::optional<Uuid> startSymbol;
     tl::optional<Uuid> startPin;
     tl::optional<Uuid> endJunction;
     tl::optional<Uuid> endSymbol;
     tl::optional<Uuid> endPin;
-    Signal<NetLine>    onEdited;  ///< Dummy event, not used
+    Signal<NetLine> onEdited;  ///< Dummy event, not used
 
     explicit NetLine(const Uuid& uuid)
       : uuid(uuid),
@@ -196,13 +196,13 @@ public:
       : uuid(node.getChildByIndex(0).getValue<Uuid>()), onEdited(*this) {
       if (node.getChildByPath("from").getChildren().count() == 2) {
         startSymbol = node.getValueByPath<Uuid>("from/symbol");
-        startPin    = node.getValueByPath<Uuid>("from/pin");
+        startPin = node.getValueByPath<Uuid>("from/pin");
       } else {
         startJunction = node.getValueByPath<Uuid>("from/junction");
       }
       if (node.getChildByPath("to").getChildren().count() == 2) {
         endSymbol = node.getValueByPath<Uuid>("to/symbol");
-        endPin    = node.getValueByPath<Uuid>("to/pin");
+        endPin = node.getValueByPath<Uuid>("to/pin");
       } else {
         endJunction = node.getValueByPath<Uuid>("to/junction");
       }
@@ -237,9 +237,9 @@ public:
   struct NetLabel : public SerializableObject {
     static constexpr const char* tagname = "label";
 
-    Uuid             uuid;
-    Point            position;
-    Angle            rotation;
+    Uuid uuid;
+    Point position;
+    Angle rotation;
     Signal<NetLabel> onEdited;  ///< Dummy event, not used
 
     NetLabel(const Uuid& uuid, const Point& position, const Angle& rotation)
@@ -262,9 +262,9 @@ public:
   struct NetSegment : public SerializableObject {
     static constexpr const char* tagname = "netsegment";
 
-    CircuitIdentifier                          netName;
+    CircuitIdentifier netName;
     SerializableObjectList<NetPoint, NetPoint> points;
-    SerializableObjectList<NetLine, NetLine>   lines;
+    SerializableObjectList<NetLine, NetLine> lines;
     SerializableObjectList<NetLabel, NetLabel> labels;
     Signal<NetSegment> onEdited;  ///< Dummy event, not used
 
@@ -288,9 +288,9 @@ public:
   };
 
   // Constructors / Destructor
-  SchematicClipboardData()                                    = delete;
+  SchematicClipboardData() = delete;
   SchematicClipboardData(const SchematicClipboardData& other) = delete;
-  SchematicClipboardData(const Uuid&  schematicUuid,
+  SchematicClipboardData(const Uuid& schematicUuid,
                          const Point& cursorPos) noexcept;
   explicit SchematicClipboardData(const QByteArray& mimeData);
   ~SchematicClipboardData() noexcept;
@@ -298,14 +298,14 @@ public:
   // Getters
   std::unique_ptr<TransactionalDirectory> getDirectory(
       const QString& path = "") noexcept;
-  const Uuid&  getSchematicUuid() const noexcept { return mSchematicUuid; }
+  const Uuid& getSchematicUuid() const noexcept { return mSchematicUuid; }
   const Point& getCursorPos() const noexcept { return mCursorPos; }
   SerializableObjectList<ComponentInstance, ComponentInstance>&
-  getComponentInstances() noexcept {
+      getComponentInstances() noexcept {
     return mComponentInstances;
   }
   SerializableObjectList<SymbolInstance, SymbolInstance>&
-  getSymbolInstances() noexcept {
+      getSymbolInstances() noexcept {
     return mSymbolInstances;
   }
   SerializableObjectList<NetSegment, NetSegment>& getNetSegments() noexcept {
@@ -313,7 +313,7 @@ public:
   }
 
   // General Methods
-  std::unique_ptr<QMimeData>                     toMimeData() const;
+  std::unique_ptr<QMimeData> toMimeData() const;
   static std::unique_ptr<SchematicClipboardData> fromMimeData(
       const QMimeData* mime);
 
@@ -328,12 +328,12 @@ private:  // Methods
 
 private:  // Data
   std::shared_ptr<TransactionalFileSystem> mFileSystem;
-  Uuid                                     mSchematicUuid;
-  Point                                    mCursorPos;
+  Uuid mSchematicUuid;
+  Point mCursorPos;
   SerializableObjectList<ComponentInstance, ComponentInstance>
-                                                         mComponentInstances;
+      mComponentInstances;
   SerializableObjectList<SymbolInstance, SymbolInstance> mSymbolInstances;
-  SerializableObjectList<NetSegment, NetSegment>         mNetSegments;
+  SerializableObjectList<NetSegment, NetSegment> mNetSegments;
 };
 
 /*******************************************************************************

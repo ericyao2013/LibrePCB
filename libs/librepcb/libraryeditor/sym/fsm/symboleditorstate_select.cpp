@@ -349,8 +349,8 @@ bool SymbolEditorState_Select::openContextMenuAtPos(const Point& pos) noexcept {
   if (mState != SubState::IDLE) return false;
 
   // handle item selection
-  QGraphicsItem*        selectedItem = nullptr;
-  QList<QGraphicsItem*> items        = findItemsAtPosition(pos);
+  QGraphicsItem* selectedItem = nullptr;
+  QList<QGraphicsItem*> items = findItemsAtPosition(pos);
   if (items.isEmpty()) return false;
   foreach (QGraphicsItem* item, items) {
     if (item->isSelected()) {
@@ -371,7 +371,7 @@ bool SymbolEditorState_Select::openContextMenuAtPos(const Point& pos) noexcept {
   Q_ASSERT(selectedItem->isSelected());
 
   // build the context menu
-  QMenu    menu;
+  QMenu menu;
   QAction* aRotateCCW =
       menu.addAction(QIcon(":/img/actions/rotate_left.png"), tr("&Rotate"));
   connect(aRotateCCW, &QAction::triggered,
@@ -574,9 +574,9 @@ void SymbolEditorState_Select::clearSelectionRect(
 QList<QGraphicsItem*> SymbolEditorState_Select::findItemsAtPosition(
     const Point& pos) noexcept {
   QList<QSharedPointer<SymbolPinGraphicsItem>> pins;
-  QList<QSharedPointer<CircleGraphicsItem>>    circles;
-  QList<QSharedPointer<PolygonGraphicsItem>>   polygons;
-  QList<QSharedPointer<TextGraphicsItem>>      texts;
+  QList<QSharedPointer<CircleGraphicsItem>> circles;
+  QList<QSharedPointer<PolygonGraphicsItem>> polygons;
+  QList<QSharedPointer<TextGraphicsItem>> texts;
   int count = mContext.symbolGraphicsItem.getItemsAtPosition(
       pos, &pins, &circles, &polygons, &texts);
   QList<QGraphicsItem*> result = {};

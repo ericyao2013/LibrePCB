@@ -481,7 +481,7 @@ void SchematicEditor::on_actionExportAsSvg_triggered() {
     FilePath filepath(filename);
 
     // Export
-    int    dpi    = 254;
+    int dpi = 254;
     QRectF rectPx = schematic->getGraphicsScene().itemsBoundingRect();
     QRectF rectSvg(Length::fromPx(rectPx.left()).toInch() * dpi,
                    Length::fromPx(rectPx.top()).toInch() * dpi,
@@ -511,37 +511,37 @@ void SchematicEditor::on_actionGenerateBom_triggered() {
 
 void SchematicEditor::on_actionAddComp_Resistor_triggered() {
   Uuid componentUuid = Uuid::fromString("ef80cd5e-2689-47ee-8888-31d04fc99174");
-  Uuid symbVarUuid   = Uuid::fromString("a5995314-f535-45d4-8bd8-2d0b8a0dc42a");
+  Uuid symbVarUuid = Uuid::fromString("a5995314-f535-45d4-8bd8-2d0b8a0dc42a");
   mFsm->processAddComponent(componentUuid, symbVarUuid);
 }
 
 void SchematicEditor::on_actionAddComp_BipolarCapacitor_triggered() {
   Uuid componentUuid = Uuid::fromString("d167e0e3-6a92-4b76-b013-77b9c230e5f1");
-  Uuid symbVarUuid   = Uuid::fromString("8cd7b37f-e5fa-4af5-a8dd-d78830bba3af");
+  Uuid symbVarUuid = Uuid::fromString("8cd7b37f-e5fa-4af5-a8dd-d78830bba3af");
   mFsm->processAddComponent(componentUuid, symbVarUuid);
 }
 
 void SchematicEditor::on_actionAddComp_UnipolarCapacitor_triggered() {
   Uuid componentUuid = Uuid::fromString("c54375c5-7149-4ded-95c5-7462f7301ee7");
-  Uuid symbVarUuid   = Uuid::fromString("5412add2-af9c-44b8-876d-a0fb7c201897");
+  Uuid symbVarUuid = Uuid::fromString("5412add2-af9c-44b8-876d-a0fb7c201897");
   mFsm->processAddComponent(componentUuid, symbVarUuid);
 }
 
 void SchematicEditor::on_actionAddComp_Inductor_triggered() {
   Uuid componentUuid = Uuid::fromString("506bd124-6062-400e-9078-b38bd7e1aaee");
-  Uuid symbVarUuid   = Uuid::fromString("62a7598c-17fe-41cf-8fa1-4ed274c3adc2");
+  Uuid symbVarUuid = Uuid::fromString("62a7598c-17fe-41cf-8fa1-4ed274c3adc2");
   mFsm->processAddComponent(componentUuid, symbVarUuid);
 }
 
 void SchematicEditor::on_actionAddComp_gnd_triggered() {
   Uuid componentUuid = Uuid::fromString("8076f6be-bfab-4fc1-9772-5d54465dd7e1");
-  Uuid symbVarUuid   = Uuid::fromString("f09ad258-595b-4ee9-a1fc-910804a203ae");
+  Uuid symbVarUuid = Uuid::fromString("f09ad258-595b-4ee9-a1fc-910804a203ae");
   mFsm->processAddComponent(componentUuid, symbVarUuid);
 }
 
 void SchematicEditor::on_actionAddComp_vcc_triggered() {
   Uuid componentUuid = Uuid::fromString("58c3c6cd-11eb-4557-aa3f-d3e05874afde");
-  Uuid symbVarUuid   = Uuid::fromString("afb86b45-68ec-47b6-8d96-153d73567228");
+  Uuid symbVarUuid = Uuid::fromString("afb86b45-68ec-47b6-8d96-153d73567228");
   mFsm->processAddComponent(componentUuid, symbVarUuid);
 }
 
@@ -649,7 +649,7 @@ void SchematicEditor::toolActionGroupChangeTriggered(
 }
 
 void SchematicEditor::addSchematic() noexcept {
-  bool    ok   = false;
+  bool ok = false;
   QString name = QInputDialog::getText(this, tr("Add schematic page"),
                                        tr("Choose a name:"), QLineEdit::Normal,
                                        tr("New Page"), &ok);
@@ -681,7 +681,7 @@ void SchematicEditor::renameSchematic(int index) noexcept {
   Schematic* schematic = mProject.getSchematicByIndex(index);
   if (!schematic) return;
 
-  bool    ok = false;
+  bool ok = false;
   QString name =
       QInputDialog::getText(this, tr("Rename sheet"), tr("Choose new name:"),
                             QLineEdit::Normal, *schematic->getName(), &ok);
@@ -717,7 +717,7 @@ QStringList SchematicEditor::getSearchToolBarCompleterList() noexcept {
 }
 
 void SchematicEditor::goToSymbol(const QString& name,
-                                 unsigned int   index) noexcept {
+                                 unsigned int index) noexcept {
   QList<SI_Symbol*> symbolCandidates = {};
   foreach (SI_Symbol* symbol, getSearchCandidates()) {
     if (symbol->getName().startsWith(name, Qt::CaseInsensitive)) {
@@ -727,7 +727,7 @@ void SchematicEditor::goToSymbol(const QString& name,
 
   if (symbolCandidates.count()) {
     index %= symbolCandidates.count();
-    SI_Symbol* symbol    = symbolCandidates[index];
+    SI_Symbol* symbol = symbolCandidates[index];
     Schematic& schematic = symbol->getSchematic();
     if (setActiveSchematicIndex(mProject.getSchematics().indexOf(&schematic))) {
       schematic.clearSelection();

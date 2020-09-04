@@ -113,13 +113,13 @@ BI_NetLine::BI_NetLine(BI_NetSegment& segment, const SExpression& node)
     mLayer(nullptr),
     mWidth(node.getValueByPath<PositiveLength>("width")) {
   mStartPoint = deserializeAnchor(node, "from");
-  mEndPoint   = deserializeAnchor(node, "to");
+  mEndPoint = deserializeAnchor(node, "to");
   if ((!mStartPoint) || (!mEndPoint)) {
     throw RuntimeError(__FILE__, __LINE__, "Invalid trace anchor!");
   }
 
   QString layerName = node.getValueByPath<QString>("layer", true);
-  mLayer            = mBoard.getLayerStack().getLayer(layerName);
+  mLayer = mBoard.getLayerStack().getLayer(layerName);
   if (!mLayer) {
     throw RuntimeError(__FILE__, __LINE__,
                        QString("Invalid board layer: \"%1\"").arg(layerName));
@@ -268,7 +268,7 @@ void BI_NetLine::serialize(SExpression& root) const {
 }
 
 BI_NetLineAnchor* BI_NetLine::deserializeAnchor(const SExpression& root,
-                                                const QString&     key) const {
+                                                const QString& key) const {
   const SExpression& node = root.getChildByPath(key);
   if (const SExpression* junctionNode = node.tryGetChildByPath("junction")) {
     return mNetSegment.getNetPointByUuid(
@@ -276,14 +276,14 @@ BI_NetLineAnchor* BI_NetLine::deserializeAnchor(const SExpression& root,
   } else if (const SExpression* viaNode = node.tryGetChildByPath("via")) {
     return mNetSegment.getViaByUuid(viaNode->getValueOfFirstChild<Uuid>());
   } else {
-    Uuid       deviceUuid = node.getValueByPath<Uuid>("device");
-    Uuid       padUuid    = node.getValueByPath<Uuid>("pad");
-    BI_Device* device     = mBoard.getDeviceInstanceByComponentUuid(deviceUuid);
+    Uuid deviceUuid = node.getValueByPath<Uuid>("device");
+    Uuid padUuid = node.getValueByPath<Uuid>("pad");
+    BI_Device* device = mBoard.getDeviceInstanceByComponentUuid(deviceUuid);
     return device ? device->getFootprint().getPad(padUuid) : nullptr;
   }
 }
 
-void BI_NetLine::serializeAnchor(SExpression&      root,
+void BI_NetLine::serializeAnchor(SExpression& root,
                                  BI_NetLineAnchor* anchor) const {
   if (const BI_NetPoint* netpoint = dynamic_cast<const BI_NetPoint*>(anchor)) {
     root.appendChild("junction", netpoint->getUuid(), false);

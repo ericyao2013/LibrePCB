@@ -45,13 +45,13 @@ class SI_NetSegment;
 
 class SI_NetLineAnchor {
 public:
-  SI_NetLineAnchor() noexcept          = default;
+  SI_NetLineAnchor() noexcept = default;
   virtual ~SI_NetLineAnchor() noexcept = default;
 
-  virtual void                     registerNetLine(SI_NetLine& netline)   = 0;
-  virtual void                     unregisterNetLine(SI_NetLine& netline) = 0;
-  virtual const QSet<SI_NetLine*>& getNetLines() const noexcept           = 0;
-  virtual const Point&             getPosition() const noexcept           = 0;
+  virtual void registerNetLine(SI_NetLine& netline) = 0;
+  virtual void unregisterNetLine(SI_NetLine& netline) = 0;
+  virtual const QSet<SI_NetLine*>& getNetLines() const noexcept = 0;
+  virtual const Point& getPosition() const noexcept = 0;
 };
 
 /*******************************************************************************
@@ -66,7 +66,7 @@ class SI_NetLine final : public SI_Base, public SerializableObject {
 
 public:
   // Constructors / Destructor
-  SI_NetLine()                        = delete;
+  SI_NetLine() = delete;
   SI_NetLine(const SI_NetLine& other) = delete;
   SI_NetLine(SI_NetSegment& segment, const SExpression& node);
   SI_NetLine(SI_NetSegment& segment, SI_NetLineAnchor& startPoint,
@@ -74,12 +74,12 @@ public:
   ~SI_NetLine() noexcept;
 
   // Getters
-  SI_NetSegment&        getNetSegment() const noexcept { return mNetSegment; }
-  const Uuid&           getUuid() const noexcept { return mUuid; }
+  SI_NetSegment& getNetSegment() const noexcept { return mNetSegment; }
+  const Uuid& getUuid() const noexcept { return mUuid; }
   const UnsignedLength& getWidth() const noexcept { return mWidth; }
-  SI_NetLineAnchor&     getStartPoint() const noexcept { return *mStartPoint; }
-  SI_NetLineAnchor&     getEndPoint() const noexcept { return *mEndPoint; }
-  SI_NetLineAnchor*     getOtherPoint(const SI_NetLineAnchor& firstPoint) const
+  SI_NetLineAnchor& getStartPoint() const noexcept { return *mStartPoint; }
+  SI_NetLineAnchor& getEndPoint() const noexcept { return *mEndPoint; }
+  SI_NetLineAnchor* getOtherPoint(const SI_NetLineAnchor& firstPoint) const
       noexcept;
   NetSignal& getNetSignalOfNetSegment() const noexcept;
 
@@ -98,28 +98,28 @@ public:
   Type_t getType() const noexcept override { return SI_Base::Type_t::NetLine; }
   const Point& getPosition() const noexcept override { return mPosition; }
   QPainterPath getGrabAreaScenePx() const noexcept override;
-  void         setSelected(bool selected) noexcept override;
+  void setSelected(bool selected) noexcept override;
 
   // Operator Overloadings
   SI_NetLine& operator=(const SI_NetLine& rhs) = delete;
 
 private:
-  void              init();
+  void init();
   SI_NetLineAnchor* deserializeAnchor(const SExpression& root,
-                                      const QString&     key) const;
+                                      const QString& key) const;
   void serializeAnchor(SExpression& root, SI_NetLineAnchor* anchor) const;
 
   // General
-  SI_NetSegment&              mNetSegment;
+  SI_NetSegment& mNetSegment;
   QScopedPointer<SGI_NetLine> mGraphicsItem;
-  Point                   mPosition;  ///< the center of startpoint and endpoint
+  Point mPosition;  ///< the center of startpoint and endpoint
   QMetaObject::Connection mHighlightChangedConnection;
 
   // Attributes
-  Uuid              mUuid;
+  Uuid mUuid;
   SI_NetLineAnchor* mStartPoint;
   SI_NetLineAnchor* mEndPoint;
-  UnsignedLength    mWidth;
+  UnsignedLength mWidth;
 };
 
 /*******************************************************************************

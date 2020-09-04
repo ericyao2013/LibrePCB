@@ -59,7 +59,7 @@ private:
   // Private Types
   struct NetSegmentItems {
     QSet<SI_NetPoint*> netpoints;
-    QSet<SI_NetLine*>  netlines;
+    QSet<SI_NetLine*> netlines;
     QSet<SI_NetLabel*> netlabels;
   };
   typedef QHash<SI_NetSegment*, NetSegmentItems> NetSegmentItemList;
@@ -75,13 +75,13 @@ private:
   /// @copydoc UndoCommand::performExecute()
   bool performExecute() override;
 
-  void           removeNetSegment(SI_NetSegment& netsegment);
-  void           splitUpNetSegment(SI_NetSegment&         netsegment,
-                                   const NetSegmentItems& selectedItems);
-  SI_NetSegment* createNewSubNetSegment(SI_NetSegment&         netsegment,
+  void removeNetSegment(SI_NetSegment& netsegment);
+  void splitUpNetSegment(SI_NetSegment& netsegment,
+                         const NetSegmentItems& selectedItems);
+  SI_NetSegment* createNewSubNetSegment(SI_NetSegment& netsegment,
                                         const NetSegmentItems& items);
-  void           removeNetLabel(SI_NetLabel& netlabel);
-  void           removeSymbol(SI_Symbol& symbol);
+  void removeNetLabel(SI_NetLabel& netlabel);
+  void removeSymbol(SI_Symbol& symbol);
   void disconnectComponentSignalInstance(ComponentSignalInstance& signal);
   QList<NetSegmentItems> getNonCohesiveNetSegmentSubSegments(
       SI_NetSegment& segment, const NetSegmentItems& removedItems) noexcept;

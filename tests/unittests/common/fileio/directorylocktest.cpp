@@ -61,7 +61,7 @@ protected:
 #if defined(Q_OS_OSX)  // Mac OS X
     return generatedDir.getPathTo(
         "uuid-generator.app/Contents/MacOS/uuid-generator");
-#elif defined(Q_OS_UNIX)                          // UNIX/Linux
+#elif defined(Q_OS_UNIX)  // UNIX/Linux
     return generatedDir.getPathTo("uuid-generator");
 #elif defined(Q_OS_WIN32) || defined(Q_OS_WIN64)  // Windows
     return generatedDir.getPathTo("uuid-generator.exe");
@@ -101,7 +101,7 @@ TEST_F(DirectoryLockTest, testConstructorWithExistingDir) {
 
 TEST_F(DirectoryLockTest, testConstructorWithNonExistingDir) {
   // using DirectoryLock on non-existent directories must not be possible
-  FilePath      dir = mTempDir.getPathTo("ghost");
+  FilePath dir = mTempDir.getPathTo("ghost");
   DirectoryLock lock(dir);
   EXPECT_EQ(dir, lock.getDirToLock());
   EXPECT_EQ(dir.getPathTo(".lock"), lock.getLockFilepath());
@@ -227,7 +227,7 @@ TEST_F(DirectoryLockTest, testTryLockWithoutArgument) {
 }
 
 TEST_F(DirectoryLockTest, testTryLockUnlockedDir) {
-  bool          wasStale = true;
+  bool wasStale = true;
   DirectoryLock lock(mTempDir);
   lock.tryLock(&wasStale);
   EXPECT_EQ(DirectoryLock::LockStatus::Locked, lock.getStatus());
@@ -235,7 +235,7 @@ TEST_F(DirectoryLockTest, testTryLockUnlockedDir) {
 }
 
 TEST_F(DirectoryLockTest, testTryLockLockedDir) {
-  bool          wasStale = true;
+  bool wasStale = true;
   DirectoryLock lock1(mTempDir);
   DirectoryLock lock2(mTempDir);
   lock1.tryLock(&wasStale);
@@ -259,8 +259,8 @@ TEST_F(DirectoryLockTest, testUnlockIfLockedOnLockedDir) {
   EXPECT_EQ(DirectoryLock::LockStatus::Unlocked, lock.getStatus());
 }
 
-#if (QT_VERSION >= \
-     QT_VERSION_CHECK(5, 3, 0))  // QProcess::processId() requires Qt>=5.3
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 3, 0))  // QProcess::processId() requires
+                                               // Qt>=5.3
 TEST_F(DirectoryLockTest, testStaleLock) {
   QProcess process;
   process.start(getTestProcessExePath().toStr());

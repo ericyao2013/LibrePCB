@@ -53,7 +53,7 @@ class SI_NetLabel final : public SI_Base, public SerializableObject {
 
 public:
   // Constructors / Destructor
-  SI_NetLabel()                         = delete;
+  SI_NetLabel() = delete;
   SI_NetLabel(const SI_NetLabel& other) = delete;
   explicit SI_NetLabel(SI_NetSegment& segment, const SExpression& node);
   explicit SI_NetLabel(SI_NetSegment& segment, const Point& position,
@@ -61,11 +61,11 @@ public:
   ~SI_NetLabel() noexcept;
 
   // Getters
-  const Uuid&    getUuid() const noexcept { return mUuid; }
-  const Angle&   getRotation() const noexcept { return mRotation; }
+  const Uuid& getUuid() const noexcept { return mUuid; }
+  const Angle& getRotation() const noexcept { return mRotation; }
   SI_NetSegment& getNetSegment() const noexcept { return mNetSegment; }
-  NetSignal&     getNetSignalOfNetSegment() const noexcept;
-  Length         getApproximateWidth() noexcept;
+  NetSignal& getNetSignalOfNetSegment() const noexcept;
+  Length getApproximateWidth() noexcept;
 
   // Setters
   void setPosition(const Point& position) noexcept;
@@ -83,7 +83,7 @@ public:
   Type_t getType() const noexcept override { return SI_Base::Type_t::NetLabel; }
   const Point& getPosition() const noexcept override { return mPosition; }
   QPainterPath getGrabAreaScenePx() const noexcept override;
-  void         setSelected(bool selected) noexcept override;
+  void setSelected(bool selected) noexcept override;
 
   // Operator Overloadings
   SI_NetLabel& operator=(const SI_NetLabel& rhs) = delete;
@@ -93,14 +93,14 @@ private:
 
   // General
   QScopedPointer<SGI_NetLabel> mGraphicsItem;
-  QMetaObject::Connection      mNameChangedConnection;
-  QMetaObject::Connection      mHighlightChangedConnection;
+  QMetaObject::Connection mNameChangedConnection;
+  QMetaObject::Connection mHighlightChangedConnection;
 
   // Attributes
   SI_NetSegment& mNetSegment;
-  Uuid           mUuid;
-  Point          mPosition;
-  Angle          mRotation;
+  Uuid mUuid;
+  Point mPosition;
+  Angle mRotation;
 };
 
 /*******************************************************************************

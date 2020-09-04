@@ -165,7 +165,7 @@ std::unique_ptr<SchematicClipboardData> SchematicClipboardDataBuilder::generate(
             copy->startJunction = np->uuid;
           } else {
             copy->startSymbol = pin->getSymbol().getUuid();
-            copy->startPin    = pin->getLibPinUuid();
+            copy->startPin = pin->getLibPinUuid();
           }
         } else {
           Q_ASSERT(false);
@@ -179,7 +179,7 @@ std::unique_ptr<SchematicClipboardData> SchematicClipboardDataBuilder::generate(
             copy->endJunction = np->uuid;
           } else {
             copy->endSymbol = pin->getSymbol().getUuid();
-            copy->endPin    = pin->getLibPinUuid();
+            copy->endPin = pin->getLibPinUuid();
           }
         } else {
           Q_ASSERT(false);

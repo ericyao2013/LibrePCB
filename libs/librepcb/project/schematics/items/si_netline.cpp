@@ -54,7 +54,7 @@ SI_NetLine::SI_NetLine(SI_NetSegment& segment, const SExpression& node)
     mEndPoint(nullptr),
     mWidth(node.getValueByPath<UnsignedLength>("width")) {
   mStartPoint = deserializeAnchor(node, "from");
-  mEndPoint   = deserializeAnchor(node, "to");
+  mEndPoint = deserializeAnchor(node, "to");
   if ((!mStartPoint) || (!mEndPoint)) {
     throw RuntimeError(__FILE__, __LINE__, "Invalid trace anchor!");
   }
@@ -166,21 +166,21 @@ void SI_NetLine::serialize(SExpression& root) const {
 }
 
 SI_NetLineAnchor* SI_NetLine::deserializeAnchor(const SExpression& root,
-                                                const QString&     key) const {
+                                                const QString& key) const {
   const SExpression& node = root.getChildByPath(key);
   if (const SExpression* junctionNode = node.tryGetChildByPath("junction")) {
     return mNetSegment.getNetPointByUuid(
         junctionNode->getValueOfFirstChild<Uuid>());
   } else {
-    Uuid       symbolUuid = node.getValueByPath<Uuid>("symbol");
-    Uuid       pinUuid    = node.getValueByPath<Uuid>("pin");
-    SI_Symbol* symbol     = mSchematic.getSymbolByUuid(symbolUuid);
+    Uuid symbolUuid = node.getValueByPath<Uuid>("symbol");
+    Uuid pinUuid = node.getValueByPath<Uuid>("pin");
+    SI_Symbol* symbol = mSchematic.getSymbolByUuid(symbolUuid);
     if (symbol) return symbol->getPin(pinUuid);
   }
   return nullptr;
 }
 
-void SI_NetLine::serializeAnchor(SExpression&      root,
+void SI_NetLine::serializeAnchor(SExpression& root,
                                  SI_NetLineAnchor* anchor) const {
   if (const SI_NetPoint* netpoint = dynamic_cast<const SI_NetPoint*>(anchor)) {
     root.appendChild("junction", netpoint->getUuid(), false);

@@ -241,8 +241,8 @@ void CmdRemoveBoardItems::createNewSubNetSegment(BI_NetSegment& netsegment,
 }
 
 QVector<CmdRemoveBoardItems::NetSegmentItems>
-CmdRemoveBoardItems::getNonCohesiveNetSegmentSubSegments(
-    BI_NetSegment& segment, const NetSegmentItems& removedItems) noexcept {
+    CmdRemoveBoardItems::getNonCohesiveNetSegmentSubSegments(
+        BI_NetSegment& segment, const NetSegmentItems& removedItems) noexcept {
   // only works with segments which are added to board!!!
   Q_ASSERT(segment.isAddedToBoard());
 
@@ -254,11 +254,11 @@ CmdRemoveBoardItems::getNonCohesiveNetSegmentSubSegments(
   // find all separate segments of the netsegment
   QVector<NetSegmentItems> segments;
   while (netlines.count() + vias.count() > 0) {
-    NetSegmentItems         seg;
+    NetSegmentItems seg;
     QSet<BI_NetLineAnchor*> processedAnchors;
-    BI_NetLineAnchor*       nextAnchor =
-        netlines.count() > 0 ? &netlines.values().first()->getStartPoint()
-                             : vias.values().first();
+    BI_NetLineAnchor* nextAnchor = netlines.count() > 0
+        ? &netlines.values().first()->getStartPoint()
+        : vias.values().first();
     findAllConnectedNetPointsAndNetLines(*nextAnchor, processedAnchors,
                                          seg.vias, seg.netpoints, seg.netlines,
                                          vias, netlines);

@@ -79,8 +79,8 @@ void BGI_Via::updateCacheAndRepaint() noexcept {
 
   setToolTip(*mVia.getNetSignalOfNetSegment().getName());
 
-  mViaLayer            = getLayer(GraphicsLayer::sBoardViasTht);
-  mTopStopMaskLayer    = getLayer(GraphicsLayer::sTopStopMask);
+  mViaLayer = getLayer(GraphicsLayer::sBoardViasTht);
+  mTopStopMaskLayer = getLayer(GraphicsLayer::sTopStopMask);
   mBottomStopMaskLayer = getLayer(GraphicsLayer::sBotStopMask);
 
   // determine stop mask clearance
@@ -90,9 +90,9 @@ void BGI_Via::updateCacheAndRepaint() noexcept {
       mVia.getBoard().getDesignRules().calcStopMaskClearance(*mVia.getSize());
 
   // set shapes and bounding rect
-  mShape        = mVia.getOutline().toQPainterPathPx();
-  mCopper       = mVia.toQPainterPathPx();
-  mStopMask     = mVia.getOutline(*stopMaskClearance).toQPainterPathPx();
+  mShape = mVia.getOutline().toQPainterPathPx();
+  mCopper = mVia.toQPainterPathPx();
+  mStopMask = mVia.getOutline(*stopMaskClearance).toQPainterPathPx();
   mBoundingRect = mStopMask.boundingRect();
 
   update();
@@ -108,7 +108,7 @@ void BGI_Via::paint(QPainter* painter, const QStyleOptionGraphicsItem* option,
   Q_UNUSED(widget);
 
   NetSignal& netsignal = mVia.getNetSignalOfNetSegment();
-  bool       highlight = mVia.isSelected() || (netsignal.isHighlighted());
+  bool highlight = mVia.isSelected() || (netsignal.isHighlighted());
 
   if (mDrawStopMask && mBottomStopMaskLayer &&
       mBottomStopMaskLayer->isVisible()) {

@@ -44,7 +44,7 @@ protected:
 #if defined(Q_OS_OSX)  // Mac OS X
     return generatedDir.getPathTo(
         "uuid-generator.app/Contents/MacOS/uuid-generator");
-#elif defined(Q_OS_UNIX)                          // UNIX/Linux
+#elif defined(Q_OS_UNIX)  // UNIX/Linux
     return generatedDir.getPathTo("uuid-generator");
 #elif defined(Q_OS_WIN32) || defined(Q_OS_WIN64)  // Windows
     return generatedDir.getPathTo("uuid-generator.exe");
@@ -96,8 +96,8 @@ TEST_F(SystemInfoTest, testIsProcessRunning) {
   { EXPECT_TRUE(SystemInfo::isProcessRunning(qApp->applicationPid())); }
 
   // check another running process
-#if (QT_VERSION >= \
-     QT_VERSION_CHECK(5, 3, 0))  // QProcess::processId() requires Qt>=5.3
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 3, 0))  // QProcess::processId() requires
+                                               // Qt>=5.3
   {
     QProcess process;
     process.start(getTestProcessExePath().toStr());
@@ -125,8 +125,8 @@ TEST_F(SystemInfoTest, testGetProcessNameByPid) {
   }
 
   // check another running process
-#if (QT_VERSION >= \
-     QT_VERSION_CHECK(5, 3, 0))  // QProcess::processId() requires Qt>=5.3
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 3, 0))  // QProcess::processId() requires
+                                               // Qt>=5.3
   {
     QProcess process;
     process.start(getTestProcessExePath().toStr());

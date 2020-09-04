@@ -241,7 +241,7 @@ bool BoardEditorState_AddVia::addVia(Board& board, const Point& pos) noexcept {
 
   try {
     mContext.undoStack.beginCmdGroup(tr("Add via to board"));
-    mIsUndoCmdActive                 = true;
+    mIsUndoCmdActive = true;
     CmdBoardNetSegmentAdd* cmdAddSeg = nullptr;
     if (mLastNetSignal) {
       cmdAddSeg = new CmdBoardNetSegmentAdd(board, *mLastNetSignal);
@@ -269,7 +269,7 @@ bool BoardEditorState_AddVia::addVia(Board& board, const Point& pos) noexcept {
   }
 }
 
-bool BoardEditorState_AddVia::updatePosition(Board&       board,
+bool BoardEditorState_AddVia::updatePosition(Board& board,
                                              const Point& pos) noexcept {
   if (mCurrentViaEditCmd) {
     mCurrentViaEditCmd->setPosition(pos, true);
@@ -306,7 +306,7 @@ void BoardEditorState_AddVia::setNetSignal(NetSignal* netsignal) noexcept {
   }
 }
 
-bool BoardEditorState_AddVia::fixPosition(Board&       board,
+bool BoardEditorState_AddVia::fixPosition(Board& board,
                                           const Point& pos) noexcept {
   Q_ASSERT(mIsUndoCmdActive == true);
   // TODO(5n8ke): handle user errors in a more graceful way without popup
@@ -420,7 +420,7 @@ bool BoardEditorState_AddVia::fixPosition(Board&       board,
     }
 
     mContext.undoStack.commitCmdGroup();
-    mIsUndoCmdActive   = false;
+    mIsUndoCmdActive = false;
     mCurrentViaToPlace = nullptr;
     return true;
   } catch (const Exception& e) {
@@ -485,7 +485,7 @@ NetSignal* BoardEditorState_AddVia::getClosestNetSignal(
       mLastClosestNetSignal = &atPosition->getNetSignalOfNetSegment();
     }
     mFindClosestNetSignal = false;
-    QTimer* timer         = new QTimer(this);
+    QTimer* timer = new QTimer(this);
     connect(timer, &QTimer::timeout, [this, timer]() {
       this->mFindClosestNetSignal = true;
       timer->deleteLater();
@@ -527,7 +527,7 @@ QSet<NetSignal*> BoardEditorState_AddVia::getNetSignalsAtScenePos(
 }
 
 BI_Via* BoardEditorState_AddVia::findVia(Board& board, const Point pos,
-                                         NetSignal*           netsignal,
+                                         NetSignal* netsignal,
                                          const QSet<BI_Via*>& except) const
     noexcept {
   QSet<BI_Via*> items = Toolbox::toSet(board.getViasAtScenePos(pos, netsignal));

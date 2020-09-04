@@ -59,7 +59,7 @@ QList<SchematicNetSegmentSplitter::Segment> SchematicNetSegmentSplitter::split()
   // Split netsegment by anchors and lines
   QList<SI_NetLine*> netlines = mNetLines;
   while (netlines.count() > 0) {
-    Segment                  segment;
+    Segment segment;
     QList<SI_NetLineAnchor*> processedAnchors;
     findConnectedLinesAndPoints(netlines.first()->getStartPoint(),
                                 processedAnchors, segment.anchors,
@@ -106,13 +106,13 @@ void SchematicNetSegmentSplitter::findConnectedLinesAndPoints(
 int SchematicNetSegmentSplitter::getNearestNetSegmentOfNetLabel(
     const SI_NetLabel& netlabel, const QList<Segment>& segments) const
     noexcept {
-  int    nearestIndex = -1;
+  int nearestIndex = -1;
   Length nearestDistance;
   for (int i = 0; i < segments.count(); ++i) {
     Length distance =
         getDistanceBetweenNetLabelAndNetSegment(netlabel, segments.at(i));
     if ((distance < nearestDistance) || (nearestIndex < 0)) {
-      nearestIndex    = i;
+      nearestIndex = i;
       nearestDistance = distance;
     }
   }
@@ -121,14 +121,14 @@ int SchematicNetSegmentSplitter::getNearestNetSegmentOfNetLabel(
 
 Length SchematicNetSegmentSplitter::getDistanceBetweenNetLabelAndNetSegment(
     const SI_NetLabel& netlabel, const Segment& netsegment) const noexcept {
-  bool   firstRun = true;
+  bool firstRun = true;
   Length nearestDistance;
   foreach (const SI_NetLineAnchor* anchor, netsegment.anchors) {
     UnsignedLength distance =
         (anchor->getPosition() - netlabel.getPosition()).getLength();
     if ((distance < nearestDistance) || firstRun) {
       nearestDistance = *distance;
-      firstRun        = false;
+      firstRun = false;
     }
   }
   foreach (const SI_NetLine* netline, netsegment.netlines) {
@@ -137,7 +137,7 @@ Length SchematicNetSegmentSplitter::getDistanceBetweenNetLabelAndNetSegment(
         netline->getEndPoint().getPosition());
     if ((distance < nearestDistance) || firstRun) {
       nearestDistance = *distance;
-      firstRun        = false;
+      firstRun = false;
     }
   }
   Q_ASSERT(firstRun == false);
