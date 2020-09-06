@@ -38,42 +38,30 @@ namespace project {
  *  Constructors / Destructor
  ******************************************************************************/
 
-BI_NetPoint::BI_NetPoint(BI_NetSegment& segment, const BI_NetPoint& other)
-  : BI_Base(segment.getBoard()),
-    mNetSegment(segment),
-    mUuid(Uuid::createRandom()),
-    mPosition(other.mPosition) {
-  init();
-}
-
 BI_NetPoint::BI_NetPoint(BI_NetSegment& segment, const SExpression& node)
-  : BI_Base(segment.getBoard()),
-    mNetSegment(segment),
-    mUuid(node.getChildByIndex(0).getValue<Uuid>()),
-    mPosition(node.getChildByPath("position")) {
+  : BI_Base(segment.getBoard()), mNetSegment(segment), mJunction(node) {
   init();
 }
 
 BI_NetPoint::BI_NetPoint(BI_NetSegment& segment, const Point& position)
   : BI_Base(segment.getBoard()),
     mNetSegment(segment),
-    mUuid(Uuid::createRandom()),
-    mPosition(position) {
+    mJunction(Uuid::createRandom(), position) {
   init();
 }
 
 void BI_NetPoint::init() {
   // create the graphics item
   mGraphicsItem.reset(new BGI_NetPoint(*this));
-  mGraphicsItem->setPos(mPosition.toPxQPointF());
+  mGraphicsItem->setPos(mJunction.getPosition().toPxQPointF());
 
   // create ERC messages
   mErcMsgDeadNetPoint.reset(new ErcMsg(mBoard.getProject(), *this,
-                                       mUuid.toStr(), "Dead",
+                                       mJunction.getUuid().toStr(), "Dead",
                                        ErcMsg::ErcMsgType_t::BoardError,
                                        tr("Dead net point in board \"%1\": %2")
                                            .arg(*mBoard.getName())
-                                           .arg(mUuid.toStr())));
+                                           .arg(mJunction.getUuid().toStr())));
 }
 
 BI_NetPoint::~BI_NetPoint() noexcept {
@@ -99,9 +87,8 @@ GraphicsLayer* BI_NetPoint::getLayerOfLines() const noexcept {
  ******************************************************************************/
 
 void BI_NetPoint::setPosition(const Point& position) noexcept {
-  if (position != mPosition) {
-    mPosition = position;
-    mGraphicsItem->setPos(mPosition.toPxQPointF());
+  if (mJunction.setPosition(position)) {
+    mGraphicsItem->setPos(position.toPxQPointF());
     foreach (BI_NetLine* line, mRegisteredNetLines) { line->updateLine(); }
     mBoard.scheduleAirWiresRebuild(&getNetSignalOfNetSegment());
   }
@@ -165,8 +152,7 @@ void BI_NetPoint::unregisterNetLine(BI_NetLine& netline) {
 }
 
 void BI_NetPoint::serialize(SExpression& root) const {
-  root.appendChild(mUuid);
-  root.appendChild(mPosition.serializeToDomElement("position"), false);
+  mJunction.serialize(root);
 }
 
 /*******************************************************************************
@@ -174,7 +160,8 @@ void BI_NetPoint::serialize(SExpression& root) const {
  ******************************************************************************/
 
 QPainterPath BI_NetPoint::getGrabAreaScenePx() const noexcept {
-  return mGraphicsItem->shape().translated(mPosition.toPxQPointF());
+  return mGraphicsItem->shape().translated(
+      mJunction.getPosition().toPxQPointF());
 }
 
 bool BI_NetPoint::isSelectable() const noexcept {

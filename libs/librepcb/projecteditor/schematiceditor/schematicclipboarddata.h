@@ -25,6 +25,7 @@
  ******************************************************************************/
 
 #include <librepcb/common/fileio/serializableobject.h>
+#include <librepcb/common/geometry/junction.h>
 #include <librepcb/common/units/point.h>
 #include <librepcb/common/uuid.h>
 #include <librepcb/project/circuit/componentinstance.h>
@@ -148,28 +149,6 @@ public:
     }
   };
 
-  struct NetPoint : public SerializableObject {
-    static constexpr const char* tagname = "junction";
-
-    Uuid             uuid;
-    Point            position;
-    Signal<NetPoint> onEdited;  ///< Dummy event, not used
-
-    NetPoint(const Uuid& uuid, const Point& position)
-      : uuid(uuid), position(position), onEdited(*this) {}
-
-    explicit NetPoint(const SExpression& node)
-      : uuid(node.getChildByIndex(0).getValue<Uuid>()),
-        position(node.getChildByPath("position")),
-        onEdited(*this) {}
-
-    /// @copydoc ::librepcb::SerializableObject::serialize()
-    void serialize(SExpression& root) const override {
-      root.appendChild(uuid);
-      root.appendChild(position.serializeToDomElement("position"), true);
-    }
-  };
-
   struct NetLine : public SerializableObject {
     static constexpr const char* tagname = "line";
 
@@ -263,17 +242,17 @@ public:
     static constexpr const char* tagname = "netsegment";
 
     CircuitIdentifier                          netName;
-    SerializableObjectList<NetPoint, NetPoint> points;
+    JunctionList                               junctions;
     SerializableObjectList<NetLine, NetLine>   lines;
     SerializableObjectList<NetLabel, NetLabel> labels;
     Signal<NetSegment> onEdited;  ///< Dummy event, not used
 
     explicit NetSegment(const CircuitIdentifier& netName)
-      : netName(netName), points(), lines(), labels(), onEdited(*this) {}
+      : netName(netName), junctions(), lines(), labels(), onEdited(*this) {}
 
     explicit NetSegment(const SExpression& node)
       : netName(node.getValueByPath<CircuitIdentifier>("net")),
-        points(node),
+        junctions(node),
         lines(node),
         labels(node),
         onEdited(*this) {}
@@ -281,7 +260,7 @@ public:
     /// @copydoc ::librepcb::SerializableObject::serialize()
     void serialize(SExpression& root) const override {
       root.appendChild("net", netName, true);
-      points.serialize(root);
+      junctions.serialize(root);
       lines.serialize(root);
       labels.serialize(root);
     }

@@ -192,11 +192,11 @@ bool CmdPasteSchematicItems::performExecute() {
     QScopedPointer<CmdSchematicNetSegmentAddElements> cmdAddElements(
         new CmdSchematicNetSegmentAddElements(*copy));
     QHash<Uuid, SI_NetPoint*> netPointMap;
-    for (const SchematicClipboardData::NetPoint& np : seg.points) {
+    for (const Junction& junction : seg.junctions) {
       SI_NetPoint* netpoint =
-          cmdAddElements->addNetPoint(np.position + mPosOffset);
+          cmdAddElements->addNetPoint(junction.getPosition() + mPosOffset);
       netpoint->setSelected(true);
-      netPointMap.insert(np.uuid, netpoint);
+      netPointMap.insert(junction.getUuid(), netpoint);
     }
     for (const SchematicClipboardData::NetLine& nl : seg.lines) {
       SI_NetLineAnchor* start = nullptr;

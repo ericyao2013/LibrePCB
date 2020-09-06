@@ -134,21 +134,18 @@ std::unique_ptr<SchematicClipboardData> SchematicClipboardDataBuilder::generate(
               netsegment->getNetSignal().getName());
       data->getNetSegments().append(newSegment);
 
-      QHash<SI_SymbolPin*, std::shared_ptr<SchematicClipboardData::NetPoint>>
-          replacedPins;
+      QHash<SI_SymbolPin*, std::shared_ptr<Junction>> replacedPins;
       foreach (SI_NetLineAnchor* anchor, seg.anchors) {
         if (SI_NetPoint* np = dynamic_cast<SI_NetPoint*>(anchor)) {
-          newSegment->points.append(
-              std::make_shared<SchematicClipboardData::NetPoint>(
-                  np->getUuid(), np->getPosition()));
+          newSegment->junctions.append(
+              std::make_shared<Junction>(np->getUuid(), np->getPosition()));
         } else if (SI_SymbolPin* pin = dynamic_cast<SI_SymbolPin*>(anchor)) {
           if (!query->getSymbols().contains(&pin->getSymbol())) {
             // Symbol will not be copied, thus replacing the pin by a netpoint
-            std::shared_ptr<SchematicClipboardData::NetPoint> np =
-                std::make_shared<SchematicClipboardData::NetPoint>(
-                    Uuid::createRandom(), pin->getPosition());
-            replacedPins.insert(pin, np);
-            newSegment->points.append(np);
+            std::shared_ptr<Junction> junction = std::make_shared<Junction>(
+                Uuid::createRandom(), pin->getPosition());
+            replacedPins.insert(pin, junction);
+            newSegment->junctions.append(junction);
           }
         }
       }
@@ -162,7 +159,7 @@ std::unique_ptr<SchematicClipboardData> SchematicClipboardDataBuilder::generate(
         } else if (SI_SymbolPin* pin =
                        dynamic_cast<SI_SymbolPin*>(&netline->getStartPoint())) {
           if (auto np = replacedPins.value(pin)) {
-            copy->startJunction = np->uuid;
+            copy->startJunction = np->getUuid();
           } else {
             copy->startSymbol = pin->getSymbol().getUuid();
             copy->startPin    = pin->getLibPinUuid();
@@ -176,7 +173,7 @@ std::unique_ptr<SchematicClipboardData> SchematicClipboardDataBuilder::generate(
         } else if (SI_SymbolPin* pin =
                        dynamic_cast<SI_SymbolPin*>(&netline->getEndPoint())) {
           if (auto np = replacedPins.value(pin)) {
-            copy->endJunction = np->uuid;
+            copy->endJunction = np->getUuid();
           } else {
             copy->endSymbol = pin->getSymbol().getUuid();
             copy->endPin    = pin->getLibPinUuid();
