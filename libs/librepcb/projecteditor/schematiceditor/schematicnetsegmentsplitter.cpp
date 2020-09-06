@@ -42,7 +42,7 @@ namespace editor {
  ******************************************************************************/
 
 SchematicNetSegmentSplitter::SchematicNetSegmentSplitter() noexcept
-  : mNetLines(), mNetLabels() {
+  : mJunctions(), mNetLines(), mNetLabels() {
 }
 
 SchematicNetSegmentSplitter::~SchematicNetSegmentSplitter() noexcept {
@@ -57,92 +57,121 @@ QList<SchematicNetSegmentSplitter::Segment> SchematicNetSegmentSplitter::split()
   QList<Segment> segments;
 
   // Split netsegment by anchors and lines
-  QList<SI_NetLine*> netlines = mNetLines;
-  while (netlines.count() > 0) {
-    Segment                  segment;
-    QList<SI_NetLineAnchor*> processedAnchors;
-    findConnectedLinesAndPoints(netlines.first()->getStartPoint(),
-                                processedAnchors, segment.anchors,
-                                segment.netlines, netlines);
-    segments.append(segment);
-  }
-  Q_ASSERT(netlines.isEmpty());
+  // QList<SI_NetLine*> netlines = mNetLines;
+  // while (netlines.count() > 0) {
+  //  Segment                  segment;
+  //  QList<SI_NetLineAnchor*> processedAnchors;
+  //  findConnectedLinesAndPoints(netlines.first()->getStartPoint(),
+  //                              processedAnchors, segment.anchors,
+  //                              segment.netlines, netlines);
+  //  segments.append(segment);
+  //}
+  // Q_ASSERT(netlines.isEmpty());
 
   // Add netlabels to their nearest netsegment
-  foreach (SI_NetLabel* netlabel, mNetLabels) {
-    int index = getNearestNetSegmentOfNetLabel(*netlabel, segments);
-    if (index >= 0) {
-      segments[index].netlabels.append(netlabel);
-    }
-  }
+  // foreach (SI_NetLabel* netlabel, mNetLabels) {
+  //  int index = getNearestNetSegmentOfNetLabel(*netlabel, segments);
+  //  if (index >= 0) {
+  //    segments[index].netlabels.append(netlabel);
+  //  }
+  //}
 
   return segments;
 }
 
-void SchematicNetSegmentSplitter::findConnectedLinesAndPoints(
-    SI_NetLineAnchor& anchor, QList<SI_NetLineAnchor*>& processedAnchors,
-    QList<SI_NetLineAnchor*>& anchors, QList<SI_NetLine*>& netlines,
-    QList<SI_NetLine*>& availableNetLines) const noexcept {
-  Q_ASSERT(!processedAnchors.contains(&anchor));
-  processedAnchors.append(&anchor);
+/*******************************************************************************
+ *  Private Methods
+ ******************************************************************************/
 
-  Q_ASSERT(!anchors.contains(&anchor));
-  anchors.append(&anchor);
+void SchematicNetSegmentSplitter::insertMissingAnchors() noexcept {
+  QHash<NetLineAnchor, Junction> replacedAnchors;
+  for (NetLine& netline : mNetLines) {
+    if (tl::optional<NetLineAnchor> anchor = insertMissingAnchor(netline.getStartPoint())) {
+      netline.setStartPoint(*anchor);
+    }
+    if (tl::optional<NetLineAnchor> anchor = insertMissingAnchor(netline.getEndPoint())) {
+      netline.setEndPoint(*anchor);
+    }
+  }
+}
 
-  foreach (SI_NetLine* line, anchor.getNetLines()) {
-    if (availableNetLines.contains(line) && (!netlines.contains(line))) {
-      netlines.append(line);
-      availableNetLines.removeOne(line);
-      SI_NetLineAnchor* p2 = line->getOtherPoint(anchor);
-      Q_ASSERT(p2);
-      if (!processedAnchors.contains(p2)) {
-        findConnectedLinesAndPoints(*p2, processedAnchors, anchors, netlines,
-                                    availableNetLines);
+tl::optional<NetLineAnchor> SchematicNetSegmentSplitter::insertMissingAnchor(const NetLineAnchor& anchor) noexcept {
+  if (tl::optional<Uuid> anchorJunction = anchor.tryGetJunction()) {
+    for (const Junction& junction : mJunctions) {
+      if (junction.getUuid() == *anchorJunction) {
+        return tl::nullopt;
       }
     }
   }
+  std::shared_ptr<Junction> newJunction = std::make_shared<Junction>(Uuid::createRandom(), Point());
+  mJunctions.append(newJunction);
+  return NetLineAnchor::junction(newJunction->getUuid());
 }
 
-int SchematicNetSegmentSplitter::getNearestNetSegmentOfNetLabel(
-    const SI_NetLabel& netlabel, const QList<Segment>& segments) const
-    noexcept {
-  int    nearestIndex = -1;
-  Length nearestDistance;
-  for (int i = 0; i < segments.count(); ++i) {
-    Length distance =
-        getDistanceBetweenNetLabelAndNetSegment(netlabel, segments.at(i));
-    if ((distance < nearestDistance) || (nearestIndex < 0)) {
-      nearestIndex    = i;
-      nearestDistance = distance;
-    }
-  }
-  return nearestIndex;
-}
+// void SchematicNetSegmentSplitter::findConnectedLinesAndPoints(
+//    SI_NetLineAnchor& anchor, QList<SI_NetLineAnchor*>& processedAnchors,
+//    QList<SI_NetLineAnchor*>& anchors, QList<SI_NetLine*>& netlines,
+//    QList<SI_NetLine*>& availableNetLines) const noexcept {
+//  Q_ASSERT(!processedAnchors.contains(&anchor));
+//  processedAnchors.append(&anchor);
+//
+//  Q_ASSERT(!anchors.contains(&anchor));
+//  anchors.append(&anchor);
+//
+//  foreach (SI_NetLine* line, anchor.getNetLines()) {
+//    if (availableNetLines.contains(line) && (!netlines.contains(line))) {
+//      netlines.append(line);
+//      availableNetLines.removeOne(line);
+//      SI_NetLineAnchor* p2 = line->getOtherPoint(anchor);
+//      Q_ASSERT(p2);
+//      if (!processedAnchors.contains(p2)) {
+//        findConnectedLinesAndPoints(*p2, processedAnchors, anchors, netlines,
+//                                    availableNetLines);
+//      }
+//    }
+//  }
+//}
 
-Length SchematicNetSegmentSplitter::getDistanceBetweenNetLabelAndNetSegment(
-    const SI_NetLabel& netlabel, const Segment& netsegment) const noexcept {
-  bool   firstRun = true;
-  Length nearestDistance;
-  foreach (const SI_NetLineAnchor* anchor, netsegment.anchors) {
-    UnsignedLength distance =
-        (anchor->getPosition() - netlabel.getPosition()).getLength();
-    if ((distance < nearestDistance) || firstRun) {
-      nearestDistance = *distance;
-      firstRun        = false;
-    }
-  }
-  foreach (const SI_NetLine* netline, netsegment.netlines) {
-    UnsignedLength distance = Toolbox::shortestDistanceBetweenPointAndLine(
-        netlabel.getPosition(), netline->getStartPoint().getPosition(),
-        netline->getEndPoint().getPosition());
-    if ((distance < nearestDistance) || firstRun) {
-      nearestDistance = *distance;
-      firstRun        = false;
-    }
-  }
-  Q_ASSERT(firstRun == false);
-  return nearestDistance;
-}
+// int SchematicNetSegmentSplitter::getNearestNetSegmentOfNetLabel(
+//    const SI_NetLabel& netlabel, const QList<Segment>& segments) const
+//    noexcept {
+//  int    nearestIndex = -1;
+//  Length nearestDistance;
+//  for (int i = 0; i < segments.count(); ++i) {
+//    Length distance =
+//        getDistanceBetweenNetLabelAndNetSegment(netlabel, segments.at(i));
+//    if ((distance < nearestDistance) || (nearestIndex < 0)) {
+//      nearestIndex    = i;
+//      nearestDistance = distance;
+//    }
+//  }
+//  return nearestIndex;
+//}
+
+// Length SchematicNetSegmentSplitter::getDistanceBetweenNetLabelAndNetSegment(
+//    const SI_NetLabel& netlabel, const Segment& netsegment) const noexcept {
+//  bool   firstRun = true;
+//  Length nearestDistance;
+//  foreach (const SI_NetLineAnchor* anchor, netsegment.anchors) {
+//    UnsignedLength distance =
+//        (anchor->getPosition() - netlabel.getPosition()).getLength();
+//    if ((distance < nearestDistance) || firstRun) {
+//      nearestDistance = *distance;
+//      firstRun        = false;
+//    }
+//  }
+//  foreach (const SI_NetLine* netline, netsegment.netlines) {
+//    UnsignedLength distance = Toolbox::shortestDistanceBetweenPointAndLine(
+//        netlabel.getPosition(), netline->getStartPoint().getPosition(),
+//        netline->getEndPoint().getPosition());
+//    if ((distance < nearestDistance) || firstRun) {
+//      nearestDistance = *distance;
+//      firstRun        = false;
+//    }
+//  }
+//  Q_ASSERT(firstRun == false);
+//  return nearestDistance;
+//}
 
 /*******************************************************************************
  *  End of File

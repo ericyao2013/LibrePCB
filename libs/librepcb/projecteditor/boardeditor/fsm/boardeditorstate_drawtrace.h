@@ -261,7 +261,7 @@ private:
   QString        mCurrentLayerName;  ///< the current board layer name
   bool           mAddVia;            ///< whether a via add is requested
   BI_Via*        mTempVia;
-  BI_Via::Shape  mCurrentViaShape;          ///< the current via shape
+  Via::Shape     mCurrentViaShape;          ///< the current via shape
   PositiveLength mCurrentViaSize;           ///< the current via size
   PositiveLength mCurrentViaDrillDiameter;  ///< the current via drill
                                             ///< diameter

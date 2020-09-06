@@ -66,7 +66,7 @@ BoardEditorState_AddVia::BoardEditorState_AddVia(
     mAutoText(tr("Auto")),
     mFindClosestNetSignal(true),
     mLastClosestNetSignal(nullptr),
-    mLastShape(BI_Via::Shape::Round),
+    mLastShape(Via::Shape::Round),
     mLastSize(700000),
     mLastDrillDiameter(300000),
     mLastNetSignal(nullptr),
@@ -99,14 +99,14 @@ bool BoardEditorState_AddVia::entry() noexcept {
   if (!addVia(*board, pos)) return false;
 
   // Add shape actions to the "command" toolbar
-  mShapeActions.insert(static_cast<int>(BI_Via::Shape::Round),
+  mShapeActions.insert(static_cast<int>(Via::Shape::Round),
                        mContext.editorUi.commandToolbar->addAction(
                            QIcon(":/img/command_toolbars/via_round.png"), ""));
-  mShapeActions.insert(static_cast<int>(BI_Via::Shape::Square),
+  mShapeActions.insert(static_cast<int>(Via::Shape::Square),
                        mContext.editorUi.commandToolbar->addAction(
                            QIcon(":/img/command_toolbars/via_square.png"), ""));
   mShapeActions.insert(
-      static_cast<int>(BI_Via::Shape::Octagon),
+      static_cast<int>(Via::Shape::Octagon),
       mContext.editorUi.commandToolbar->addAction(
           QIcon(":/img/command_toolbars/via_octagon.png"), ""));
   mActionSeparators.append(mContext.editorUi.commandToolbar->addSeparator());
@@ -115,7 +115,7 @@ bool BoardEditorState_AddVia::entry() noexcept {
   // Connect the shape actions with the slot updateShapeActionsCheckedState()
   foreach (int shape, mShapeActions.keys()) {
     connect(mShapeActions.value(shape), &QAction::triggered, [this, shape]() {
-      mLastShape = static_cast<BI_Via::Shape>(shape);
+      mLastShape = static_cast<Via::Shape>(shape);
       if (mCurrentViaEditCmd) {
         mCurrentViaEditCmd->setShape(mLastShape, true);
       }
@@ -256,8 +256,8 @@ bool BoardEditorState_AddVia::addVia(Board& board, const Point& pos) noexcept {
     Q_ASSERT(netsegment);
     QScopedPointer<CmdBoardNetSegmentAddElements> cmdAddVia(
         new CmdBoardNetSegmentAddElements(*netsegment));
-    mCurrentViaToPlace =
-        cmdAddVia->addVia(pos, mLastShape, mLastSize, mLastDrillDiameter);
+    mCurrentViaToPlace = cmdAddVia->addVia(Via(
+        Uuid::createRandom(), pos, mLastShape, mLastSize, mLastDrillDiameter));
     Q_ASSERT(mCurrentViaToPlace);
     mContext.undoStack.appendToCmdGroup(cmdAddVia.take());
     mCurrentViaEditCmd.reset(new CmdBoardViaEdit(*mCurrentViaToPlace));

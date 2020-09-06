@@ -66,7 +66,7 @@ BoardEditorState_DrawTrace::BoardEditorState_DrawTrace(
     mCurrentLayerName(GraphicsLayer::sTopCopper),
     mAddVia(false),
     mTempVia(nullptr),
-    mCurrentViaShape(BI_Via::Shape::Round),
+    mCurrentViaShape(Via::Shape::Round),
     mCurrentViaSize(700000),
     mCurrentViaDrillDiameter(300000),
     mViaLayerName(""),
@@ -170,14 +170,14 @@ bool BoardEditorState_DrawTrace::entry() noexcept {
       this, &BoardEditorState_DrawTrace::layerComboBoxIndexChanged);
 
   // Add shape actions to the "command" toolbar
-  mShapeActions.insert(static_cast<int>(BI_Via::Shape::Round),
+  mShapeActions.insert(static_cast<int>(Via::Shape::Round),
                        mContext.editorUi.commandToolbar->addAction(
                            QIcon(":/img/command_toolbars/via_round.png"), ""));
-  mShapeActions.insert(static_cast<int>(BI_Via::Shape::Square),
+  mShapeActions.insert(static_cast<int>(Via::Shape::Square),
                        mContext.editorUi.commandToolbar->addAction(
                            QIcon(":/img/command_toolbars/via_square.png"), ""));
   mShapeActions.insert(
-      static_cast<int>(BI_Via::Shape::Octagon),
+      static_cast<int>(Via::Shape::Octagon),
       mContext.editorUi.commandToolbar->addAction(
           QIcon(":/img/command_toolbars/via_octagon.png"), ""));
   updateShapeActionsCheckedState();
@@ -185,7 +185,7 @@ bool BoardEditorState_DrawTrace::entry() noexcept {
   // Connect the shape actions with the slot updateShapeActionsCheckedState()
   foreach (int shape, mShapeActions.keys()) {
     connect(mShapeActions.value(shape), &QAction::triggered, [this, shape]() {
-      mCurrentViaShape = static_cast<BI_Via::Shape>(shape);
+      mCurrentViaShape = static_cast<Via::Shape>(shape);
       updateShapeActionsCheckedState();
     });
   }
@@ -301,15 +301,15 @@ bool BoardEditorState_DrawTrace::processKeyPressed(
       mDrillEdit->stepBy(-1);
       return true;
     case Qt::Key_4:
-      mCurrentViaShape = BI_Via::Shape::Round;
+      mCurrentViaShape = Via::Shape::Round;
       updateShapeActionsCheckedState();
       return true;
     case Qt::Key_5:
-      mCurrentViaShape = BI_Via::Shape::Square;
+      mCurrentViaShape = Via::Shape::Square;
       updateShapeActionsCheckedState();
       return true;
     case Qt::Key_6:
-      mCurrentViaShape = BI_Via::Shape::Octagon;
+      mCurrentViaShape = Via::Shape::Octagon;
       updateShapeActionsCheckedState();
       return true;
     default:
@@ -890,9 +890,9 @@ void BoardEditorState_DrawTrace::showVia(bool isVisible) noexcept {
       cmdRemove->removeNetPoint(*mPositioningNetPoint2);
       CmdBoardNetSegmentAddElements* cmdAdd =
           new CmdBoardNetSegmentAddElements(*mCurrentNetSegment);
-      mTempVia =
-          cmdAdd->addVia(mPositioningNetPoint2->getPosition(), mCurrentViaShape,
-                         mCurrentViaSize, mCurrentViaDrillDiameter);
+      mTempVia = cmdAdd->addVia(
+          Via(Uuid::createRandom(), mPositioningNetPoint2->getPosition(),
+              mCurrentViaShape, mCurrentViaSize, mCurrentViaDrillDiameter));
       Q_ASSERT(mTempVia);
       mPositioningNetLine2 = cmdAdd->addNetLine(
           *mPositioningNetPoint1, *mTempVia, mPositioningNetLine2->getLayer(),

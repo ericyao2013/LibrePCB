@@ -104,7 +104,7 @@ private:  // Data
   QString        mAutoText;
   bool           mFindClosestNetSignal;
   NetSignal*     mLastClosestNetSignal;
-  BI_Via::Shape  mLastShape;
+  Via::Shape     mLastShape;
   PositiveLength mLastSize;
   PositiveLength mLastDrillDiameter;
   NetSignal*     mLastNetSignal;

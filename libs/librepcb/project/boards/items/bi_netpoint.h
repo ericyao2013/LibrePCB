@@ -68,6 +68,7 @@ public:
   bool isUsed() const noexcept { return (mRegisteredNetLines.count() > 0); }
   GraphicsLayer* getLayerOfLines() const noexcept;
   bool           isSelectable() const noexcept override;
+  TraceAnchor    toTraceAnchor() const noexcept override;
 
   // Setters
   void setPosition(const Point& position) noexcept;

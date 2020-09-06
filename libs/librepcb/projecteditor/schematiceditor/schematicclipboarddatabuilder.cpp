@@ -118,78 +118,44 @@ std::unique_ptr<SchematicClipboardData> SchematicClipboardDataBuilder::generate(
     SchematicNetSegmentSplitter splitter;
     foreach (SI_NetLine* netline, query->getNetLines()) {
       if (&netline->getNetSegment() == netsegment) {
-        splitter.addNetLine(netline);
+        splitter.addNetLine(netline->getNetLine());
       }
     }
     foreach (SI_NetLabel* netlabel, query->getNetLabels()) {
       if (&netlabel->getNetSegment() == netsegment) {
-        splitter.addNetLabel(netlabel);
+        splitter.addNetLabel(netlabel->getNetLabel());
       }
     }
 
-    foreach (const SchematicNetSegmentSplitter::Segment& seg,
-             splitter.split()) {
-      std::shared_ptr<SchematicClipboardData::NetSegment> newSegment =
-          std::make_shared<SchematicClipboardData::NetSegment>(
-              netsegment->getNetSignal().getName());
-      data->getNetSegments().append(newSegment);
-
-      QHash<SI_SymbolPin*, std::shared_ptr<Junction>> replacedPins;
-      foreach (SI_NetLineAnchor* anchor, seg.anchors) {
-        if (SI_NetPoint* np = dynamic_cast<SI_NetPoint*>(anchor)) {
-          newSegment->junctions.append(
-              std::make_shared<Junction>(np->getUuid(), np->getPosition()));
-        } else if (SI_SymbolPin* pin = dynamic_cast<SI_SymbolPin*>(anchor)) {
-          if (!query->getSymbols().contains(&pin->getSymbol())) {
-            // Symbol will not be copied, thus replacing the pin by a netpoint
-            std::shared_ptr<Junction> junction = std::make_shared<Junction>(
-                Uuid::createRandom(), pin->getPosition());
-            replacedPins.insert(pin, junction);
-            newSegment->junctions.append(junction);
-          }
-        }
-      }
-      foreach (SI_NetLine* netline, seg.netlines) {
-        std::shared_ptr<SchematicClipboardData::NetLine> copy =
-            std::make_shared<SchematicClipboardData::NetLine>(
-                netline->getUuid());
-        if (SI_NetPoint* netpoint =
-                dynamic_cast<SI_NetPoint*>(&netline->getStartPoint())) {
-          copy->startJunction = netpoint->getUuid();
-        } else if (SI_SymbolPin* pin =
-                       dynamic_cast<SI_SymbolPin*>(&netline->getStartPoint())) {
-          if (auto np = replacedPins.value(pin)) {
-            copy->startJunction = np->getUuid();
-          } else {
-            copy->startSymbol = pin->getSymbol().getUuid();
-            copy->startPin    = pin->getLibPinUuid();
-          }
-        } else {
-          Q_ASSERT(false);
-        }
-        if (SI_NetPoint* netpoint =
-                dynamic_cast<SI_NetPoint*>(&netline->getEndPoint())) {
-          copy->endJunction = netpoint->getUuid();
-        } else if (SI_SymbolPin* pin =
-                       dynamic_cast<SI_SymbolPin*>(&netline->getEndPoint())) {
-          if (auto np = replacedPins.value(pin)) {
-            copy->endJunction = np->getUuid();
-          } else {
-            copy->endSymbol = pin->getSymbol().getUuid();
-            copy->endPin    = pin->getLibPinUuid();
-          }
-        } else {
-          Q_ASSERT(false);
-        }
-        newSegment->lines.append(copy);
-      }
-      foreach (SI_NetLabel* netlabel, seg.netlabels) {
-        newSegment->labels.append(
-            std::make_shared<SchematicClipboardData::NetLabel>(
-                netlabel->getUuid(), netlabel->getPosition(),
-                netlabel->getRotation()));
-      }
-    }
+    //foreach (const SchematicNetSegmentSplitter::Segment& seg,
+    //         splitter.split()) {
+    //  std::shared_ptr<SchematicClipboardData::NetSegment> newSegment =
+    //      std::make_shared<SchematicClipboardData::NetSegment>(
+    //          netsegment->getNetSignal().getName());
+    //  data->getNetSegments().append(newSegment);
+    //
+    //  foreach (SI_NetLineAnchor* anchor, seg.anchors) {
+    //    if (SI_NetPoint* np = dynamic_cast<SI_NetPoint*>(anchor)) {
+    //      newSegment->junctions.append(
+    //          std::make_shared<Junction>(np->getUuid(), np->getPosition()));
+    //    } else if (SI_SymbolPin* pin = dynamic_cast<SI_SymbolPin*>(anchor)) {
+    //      if (!query->getSymbols().contains(&pin->getSymbol())) {
+    //        // Symbol will not be copied, thus replacing the pin by a netpoint
+    //        std::shared_ptr<Junction> junction = std::make_shared<Junction>(
+    //            Uuid::createRandom(), pin->getPosition());
+    //        newSegment->junctions.append(junction);
+    //      }
+    //    }
+    //  }
+    //  foreach (SI_NetLine* netline, seg.netlines) {
+    //    newSegment->lines.append(
+    //        std::make_shared<NetLine>(netline->getNetLine()));
+    //  }
+    //  foreach (SI_NetLabel* netlabel, seg.netlabels) {
+    //    newSegment->labels.append(
+    //        std::make_shared<NetLabel>(netlabel->getNetLabel()));
+    //  }
+    //}
   }
 
   return data;

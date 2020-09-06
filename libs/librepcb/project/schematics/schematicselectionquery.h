@@ -51,6 +51,13 @@ class SchematicSelectionQuery final : public QObject {
   Q_OBJECT
 
 public:
+  // Types
+  struct NetSegmentItems {
+    QSet<SI_NetPoint*> netpoints;
+    QSet<SI_NetLine*>  netlines;
+    QSet<SI_NetLabel*> netlabels;
+  };
+
   // Constructors / Destructor
   SchematicSelectionQuery()                                     = delete;
   SchematicSelectionQuery(const SchematicSelectionQuery& other) = delete;
@@ -70,7 +77,8 @@ public:
   const QSet<SI_NetLabel*>& getNetLabels() const noexcept {
     return mResultNetLabels;
   }
-  int  getResultCount() const noexcept;
+  QHash<SI_NetSegment*, NetSegmentItems> getNetSegmentItems() const noexcept;
+  int                                    getResultCount() const noexcept;
   bool isResultEmpty() const noexcept { return (getResultCount() == 0); }
 
   // General Methods

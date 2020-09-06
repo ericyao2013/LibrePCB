@@ -55,6 +55,21 @@ SchematicSelectionQuery::~SchematicSelectionQuery() noexcept {
  *  Getters: General
  ******************************************************************************/
 
+QHash<SI_NetSegment*, SchematicSelectionQuery::NetSegmentItems>
+SchematicSelectionQuery::getNetSegmentItems() const noexcept {
+  QHash<SI_NetSegment*, NetSegmentItems> result;
+  foreach (SI_NetPoint* netpoint, mResultNetPoints) {
+    result[&netpoint->getNetSegment()].netpoints.insert(netpoint);
+  }
+  foreach (SI_NetLine* netline, mResultNetLines) {
+    result[&netline->getNetSegment()].netlines.insert(netline);
+  }
+  foreach (SI_NetLabel* netlabel, mResultNetLabels) {
+    result[&netlabel->getNetSegment()].netlabels.insert(netlabel);
+  }
+  return result;
+}
+
 int SchematicSelectionQuery::getResultCount() const noexcept {
   return mResultSymbols.count() + mResultNetPoints.count() +
          mResultNetLines.count() + mResultNetLabels.count();

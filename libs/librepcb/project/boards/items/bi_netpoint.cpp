@@ -82,6 +82,10 @@ GraphicsLayer* BI_NetPoint::getLayerOfLines() const noexcept {
                                                 : nullptr;
 }
 
+TraceAnchor BI_NetPoint::toTraceAnchor() const noexcept {
+  return TraceAnchor::netPoint(mJunction.getUuid());
+}
+
 /*******************************************************************************
  *  Setters
  ******************************************************************************/
@@ -127,11 +131,19 @@ void BI_NetPoint::removeFromBoard() {
 }
 
 void BI_NetPoint::registerNetLine(BI_NetLine& netline) {
-  if ((!isAddedToBoard()) || (mRegisteredNetLines.contains(&netline)) ||
-      (&netline.getNetSegment() != &mNetSegment) ||
-      ((mRegisteredNetLines.count() > 0) &&
-       (&netline.getLayer() != getLayerOfLines()))) {
-    throw LogicError(__FILE__, __LINE__);
+  if (!isAddedToBoard()) {
+    throw LogicError(__FILE__, __LINE__,
+                     "NetPoint is currently not added to the board.");
+  } else if (mRegisteredNetLines.contains(&netline)) {
+    throw LogicError(__FILE__, __LINE__,
+                     "NetLine is already registered to the NetPoint.");
+  } else if (&netline.getNetSegment() != &mNetSegment) {
+    throw LogicError(__FILE__, __LINE__,
+                     "NetLine has different NetSegment than the NetPoint.");
+  } else if ((mRegisteredNetLines.count() > 0) &&
+             (&netline.getLayer() != getLayerOfLines())) {
+    throw LogicError(__FILE__, __LINE__,
+                     "NetPoint already has NetLines on different layer.");
   }
   mRegisteredNetLines.insert(&netline);
   netline.updateLine();
