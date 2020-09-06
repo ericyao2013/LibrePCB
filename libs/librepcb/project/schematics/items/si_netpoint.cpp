@@ -84,6 +84,10 @@ NetSignal& SI_NetPoint::getNetSignalOfNetSegment() const noexcept {
   return mNetSegment.getNetSignal();
 }
 
+NetLineAnchor SI_NetPoint::toNetLineAnchor() const noexcept {
+  return NetLineAnchor::junction(mJunction.getUuid());
+}
+
 /*******************************************************************************
  *  Setters
  ******************************************************************************/
